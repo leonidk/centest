@@ -3,5 +3,8 @@
 
 int main(int argc, char* argv[])
 {
-		return 0;
+	img::Img<uint8_t> left, right;
+	stereo::CensusMatch cm(0, 0, 0);
+	auto disp = cm.match(left, right);
+	return 0;
 }

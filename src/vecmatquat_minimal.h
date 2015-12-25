@@ -9,6 +9,7 @@
 #ifdef VECMATQUAT_FULL_H
 #error
 #endif
+#pragma once
 
 
 #ifndef VECMATQUAT_H
