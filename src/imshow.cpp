@@ -1,12 +1,13 @@
 #include "image.h"
-#include <GLFW\glfw3.h>
+#include <GLFW/glfw3.h>
 #include <mutex>
 #include <unordered_map>
 #include <string>
 #include <stdint.h>
 #include <memory>
 #include <iostream>
-
+#include <vector>
+#include <cmath>
 
 #pragma comment( lib, "opengl32" )
 namespace img {
@@ -76,8 +77,8 @@ namespace img {
 				auto wScale = ((float)width) / ((float)win.second.width);
 				auto hScale = ((float)height) / ((float)win.second.height);
 				auto minScale = (wScale < hScale) ? wScale : hScale;
-				int wShift = (int)nearbyint((width - minScale*win.second.width) / 2.0f);
-				int hShift = (int)nearbyint((height - minScale*win.second.height) / 2.0f);
+				int wShift = (int)std::nearbyint((width - minScale*win.second.width) / 2.0f);
+				int hShift = (int)std::nearbyint((height - minScale*win.second.height) / 2.0f);
 
 				glViewport(wShift, hShift, (int)nearbyint(win.second.width*minScale), (int)nearbyint(win.second.height*minScale));
 			}

@@ -8,9 +8,9 @@ SRC_EXT = cpp
 # Path to the source directory, relative to the makefile
 SRC_PATH = ./src
 # Space-separated pkg-config libraries used by this project
-LIBS = glfw3
+LIBS = gl glfw3
 # General compiler flags
-COMPILE_FLAGS = -std=c++11 -Wall -Wextra -g
+COMPILE_FLAGS = -std=c++11 -g 
 #COMPILE_FLAGS = -std=c++11 -g -w  
 # Additional release-specific flags
 RCOMPILE_FLAGS = -D NDEBUG -march=native -O3
