@@ -6,7 +6,7 @@ namespace stereo {
 
 	class StereoMatch {
 	public:
-		StereoMatch(int w, int h, int d) : width(w), height(h), maxdisp(d) {};
+		StereoMatch(int w, int h, int d, int m) : width(w), height(h), maxdisp(d), muldisp(m) {};
 		virtual void match(img::Img<uint8_t> & left,img::Img<uint8_t> & right,
 						   img::Img<uint16_t> & disp) = 0;
 		img::Img<uint16_t> match(img::Img<uint8_t> & left, img::Img<uint8_t> & right)
@@ -16,14 +16,14 @@ namespace stereo {
 			return disp;
 		}
 	protected:
-		int width, height, maxdisp;
+		int width, height, maxdisp, muldisp;
 	};
 
 	class CensusMatch : public StereoMatch {
 	public:
 		using StereoMatch::match;
 
-		CensusMatch(int w, int h, int d);
+		CensusMatch(int w, int h, int d, int m);
 		virtual void match(img::Img<uint8_t> & left, img::Img<uint8_t> & right,
 			img::Img<uint16_t> & disp) override;
 	};

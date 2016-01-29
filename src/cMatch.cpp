@@ -3,8 +3,8 @@
 using namespace stereo;
 
 
-CensusMatch::CensusMatch(int w, int h, int d)
-	: StereoMatch(w, h, d)
+CensusMatch::CensusMatch(int w, int h, int d, int m)
+	: StereoMatch(w, h, d, m)
 {
 
 }

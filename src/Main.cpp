@@ -9,8 +9,7 @@ int main(int argc, char* argv[])
    
     auto left_g = img::Rgb2grey(left);
     auto right_g = img::Rgb2grey(right);
-    stereo::CensusMatch cm(left.width, left.height, 64);
-	
+    stereo::CensusMatch cm(left.width, left.height, 64, 16);	
     auto disp = cm.match(left_g, right_g);
     
 	return 0;
