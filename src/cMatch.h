@@ -1,6 +1,7 @@
 #pragma once
 
 #include "image.h"
+#include <vector>
 
 namespace stereo {
 
@@ -26,5 +27,7 @@ namespace stereo {
 		CensusMatch(int w, int h, int d, int m);
 		virtual void match(img::Img<uint8_t> & left, img::Img<uint8_t> & right,
 			img::Img<uint16_t> & disp) override;
+    private:
+        std::vector<uint16_t> costs;
 	};
 }
