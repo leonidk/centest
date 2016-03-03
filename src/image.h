@@ -20,8 +20,8 @@ namespace img {
 		struct null_d { void operator ()(T const * p)	{ } };
 		struct arr_d { void operator ()(T const * p)	{ delete[] p; } };
 	    T sample(const float x, const float y, int chan) {
-            auto pixX = [this](float x){ return (int)clamp_f(0,width-1,std::round(x)); };
-            auto pixY = [this](float y){ return (int)clamp_f(0,height-1,std::round(y)); };
+            auto pixX = [this](float x){ return (int)clamp_f(0.0f,(float)(width-1),std::round(x)); };
+            auto pixY = [this](float y){ return (int)clamp_f(0.0f,(float)(height-1),std::round(y)); };
 
             auto xm = pixX(x-0.5f);
             auto xp = pixX(x+0.5f);
