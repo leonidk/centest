@@ -19,7 +19,7 @@ namespace img {
 
 		struct null_d { void operator ()(T const * p)	{ } };
 		struct arr_d { void operator ()(T const * p)	{ delete[] p; } };
-	    T sample(const float x, const float y) {
+	    T sample(const float x, const float y, int chan) {
             auto pixX = [this](float x){ return (int)clamp_f(0,width-1,std::round(x)); };
             auto pixY = [this](float y){ return (int)clamp_f(0,height-1,std::round(y)); };
 
@@ -29,10 +29,10 @@ namespace img {
             auto yp = pixY(y+0.5f);
             auto ptr = data.get();
 
-            auto tl = ptr[ym*width+xm];
-            auto tr = ptr[ym*width+xp];
-            auto bl = ptr[yp*width+xm];
-            auto br = ptr[yp*width+xp];
+            auto tl = ptr[C*(ym*width+xm)+chan];
+            auto tr = ptr[C*(ym*width+xp)+chan];
+            auto bl = ptr[C*(yp*width+xm)+chan];
+            auto br = ptr[C*(yp*width+xp)+chan];
 
             float dx = x - xm;
             float dy = y - ym;
