@@ -91,8 +91,8 @@ void CensusMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img
 				uint16_t cost = 0;
 				for (int i = -B_R; i <= B_R; i++) {
 					for (int j = -B_R; j <= B_R; j++) {
-						auto pl = censusLeft[(y + i)*width + (x + j)];
-						auto pr = censusRight[(y + i)*width + (d + j)];
+						auto pl = censusLeft[(y + i)*width + (d + j)];
+						auto pr = censusRight[(y + i)*width + (x + j)];
 
 						cost += popcount(pl ^ pr);
 					}
@@ -101,19 +101,30 @@ void CensusMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img
             }
         }
         for(int x=B_R; x < width - B_R; x++) {
-			auto minVal = std::numeric_limits<uint16_t>::max();
-			auto minIdx = 0;
+			auto minRVal = std::numeric_limits<uint16_t>::max();
+			auto minRIdx = 0;
+			auto minLVal = std::numeric_limits<uint16_t>::max();
+			auto minLIdx = 0;
 			for (int d = 0; d < maxdisp; d++){
 				auto cost = costs[x*maxdisp + d];
-				if (cost < minVal) {
-					minVal = cost;
-					minIdx = d;
+				if (cost < minRVal) {
+					minRVal = cost;
+					minRIdx = d;
 				}
 			}
-            //uint16_t minRL = 0;
-            //for(
-            //printf("c: %d %ld %d\n",x, dis, *min_elem);
-			dptr[y*width + x] = minIdx * muldisp;
+            auto xl = std::max(0,x-minRIdx);
+            auto xu = std::min(width-1,xl+maxdisp);
+            for(int xd = xl; xd < xu; xd++) {
+                auto d = x - xd + minRIdx;
+				auto cost = costs[xd*maxdisp + d];
+				if (cost < minLVal) {
+					minLVal = cost;
+					minLIdx = d;
+				}
+            }
+            //printf("%d %d\n", xl, xu);
+            //printf("%d %d %d %d\n", minLIdx,minRIdx,minLVal,minRVal);
+			dptr[y*width + x] = abs(minLIdx-minRIdx) < 2 ? minRIdx * muldisp : 0;
         }
     }
 }

@@ -2,7 +2,7 @@
 
 #include "image.h"
 #include <vector>
-
+#include <cstring> // memset
 namespace stereo {
 
 	class StereoMatch {
