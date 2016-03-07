@@ -15,7 +15,6 @@ int main(int argc, char* argv[])
 
     auto img = img::imread<uint8_t,3>(input_fn);
     auto img_out = img::Image<uint8_t,3>(img.width/scale,img.height/scale);
-    auto ptr = img.data.get();
     auto ptr2 = img_out.data.get();
     for (int y=0; y < img_out.height; y++) { 
         for (int x=0; x < img_out.width; x++) { 
