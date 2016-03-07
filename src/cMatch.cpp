@@ -53,7 +53,7 @@ static void censusTransform(uint8_t * in, uint32_t * out, int w, int h)
     for(int y=C_R; y < h - C_R; y++) {
         for(int x=C_R; x < w - C_R; x++) {
             for(int p=0; p < ns; p++) {
-                out[y*w+x] &= (in[(y+samples[2*p])*w+(x+samples[2*p+1])])<<p;
+                out[y*w+x] |= (in[(y+samples[2*p])*w+(x+samples[2*p+1])])<<p;
             }
         }
     }
@@ -74,7 +74,6 @@ void CensusMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img
             auto pl = censusLeft[y*width + x];
             auto bl = std::max(0,x-maxdisp);
             for(int d=bl; d < x; d++) {
-                //printf("%d %d\n",x,d);
                 auto pr = censusRight[y*width + d];
                 costs[x*maxdisp+(x-d)] = __builtin_popcount(pl ^ pr);
             }
@@ -83,7 +82,9 @@ void CensusMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img
             auto cstart = costs.begin() + x*maxdisp;
             auto min_elem = std::min_element(cstart,cstart + maxdisp);
             auto dis = std::distance(cstart,min_elem);
-            printf("c: %d %ld\n",x, dis);
+            uint16_t minRL = 0;
+            //for(
+            //printf("c: %d %ld %d\n",x, dis, *min_elem);
             dptr[y*width+x] = dis * muldisp; 
         }
     }
