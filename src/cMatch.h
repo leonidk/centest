@@ -28,6 +28,7 @@ namespace stereo {
 		virtual void match(img::Img<uint8_t> & left, img::Img<uint8_t> & right,
 			img::Img<uint16_t> & disp) override;
     private:
+        std::vector<uint32_t> censusLeft,censusRight;
         std::vector<uint16_t> costs;
 	};
 }
