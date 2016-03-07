@@ -13,6 +13,7 @@ namespace stereo {
 		img::Img<uint16_t> match(img::Img<uint8_t> & left, img::Img<uint8_t> & right)
 		{
 			img::Img<uint16_t> disp(left.width, left.height);
+			memset(disp.data.get(), 0, width*height*sizeof(uint16_t));
 			this->match(left, right, disp);
 			return disp;
 		}

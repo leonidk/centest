@@ -49,15 +49,26 @@ CensusMatch::CensusMatch(int w, int h, int d, int m)
 
 static void censusTransform(uint8_t * in, uint32_t * out, int w, int h)
 {
-    auto ns = (sizeof(samples)/sizeof(int))/2;
+    int ns = (int)(sizeof(samples)/sizeof(int))/2;
     for(int y=C_R; y < h - C_R; y++) {
         for(int x=C_R; x < w - C_R; x++) {
+			uint32_t px = 0;
+			auto center = in[y*w + x];
             for(int p=0; p < ns; p++) {
-                out[y*w+x] |= (in[(y+samples[2*p])*w+(x+samples[2*p+1])])<<p;
+				auto yp = (y + samples[2 * p]);
+				auto xp = (x + samples[2 * p + 1]);
+				px |= (in[yp*w + xp] > center) << p;
             }
+			out[y*w + x] = px;
         }
     }
 }
+
+#ifdef _WIN32
+#define popcount __popcnt
+#else
+#define popcount __builtin_popcount
+#endif
 
 void CensusMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img<uint16_t> & disp)
 {
@@ -67,25 +78,42 @@ void CensusMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img
 
     censusTransform(lptr,censusLeft.data(),width,height);
     censusTransform(rptr,censusRight.data(),width,height);
-    
+	img::Img<uint32_t> lc(left.width, left.height, (uint32_t*)censusLeft.data());
+	img::Img<uint32_t> rc(left.width, left.height, (uint32_t*)censusRight.data());
+	img::Img<uint16_t> costI(maxdisp, width, (uint16_t*)costs.data());
+
     for(int y=B_R; y < height - B_R; y++) {
         costs.assign(width*maxdisp,std::numeric_limits<uint16_t>::max());
         for(int x=B_R; x < width - B_R; x++) {
-            auto pl = censusLeft[y*width + x];
-            auto bl = std::max(0,x-maxdisp);
-            for(int d=bl; d < x; d++) {
-                auto pr = censusRight[y*width + d];
-                costs[x*maxdisp+(x-d)] = __builtin_popcount(pl ^ pr);
+            //auto bl = std::max(0,x-maxdisp+1);
+			auto ul = std::min(width - B_R, x + maxdisp);
+            for(int d=x; d < ul; d++) {
+				uint16_t cost = 0;
+				for (int i = -B_R; i <= B_R; i++) {
+					for (int j = -B_R; j <= B_R; j++) {
+						auto pl = censusLeft[(y + i)*width + (x + j)];
+						auto pr = censusRight[(y + i)*width + (d + j)];
+
+						cost += popcount(pl ^ pr);
+					}
+				}
+				costs[x*maxdisp + (d-x)] = cost; 
             }
         }
         for(int x=B_R; x < width - B_R; x++) {
-            auto cstart = costs.begin() + x*maxdisp;
-            auto min_elem = std::min_element(cstart,cstart + maxdisp);
-            auto dis = std::distance(cstart,min_elem);
-            uint16_t minRL = 0;
+			auto minVal = std::numeric_limits<uint16_t>::max();
+			auto minIdx = 0;
+			for (int d = 0; d < maxdisp; d++){
+				auto cost = costs[x*maxdisp + d];
+				if (cost < minVal) {
+					minVal = cost;
+					minIdx = d;
+				}
+			}
+            //uint16_t minRL = 0;
             //for(
             //printf("c: %d %ld %d\n",x, dis, *min_elem);
-            dptr[y*width+x] = dis * muldisp; 
+			dptr[y*width + x] = minIdx * muldisp;
         }
     }
 }
