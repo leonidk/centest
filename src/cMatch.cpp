@@ -69,6 +69,15 @@ static void censusTransform(uint8_t * in, uint32_t * out, int w, int h)
 #else
 #define popcount __builtin_popcount
 #endif
+static float subpixel(float costLeft, float costMiddle, float costRight)
+{
+	if (costMiddle >= 0xfffe || costLeft >= 0xfffe || costRight >= 0xfffe)
+		return 0.f;
+
+	auto num = costRight - costLeft;
+	auto den = (costRight < costLeft) ? (costMiddle - costLeft) : (costMiddle - costRight);
+	return den != 0 ? 0.5f*(num / den) : 0;
+}
 
 void CensusMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img<uint16_t> & disp)
 {
@@ -168,8 +177,12 @@ void CensusMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img
 					minRIdx = d;
 				}
 			}
-
-			dptr[y*width + x] =  abs(minLIdx - minRIdx) < 2 ? minLIdx * muldisp : 0;
+			auto sp = (minLIdx > 0 && minLIdx < maxdisp-1) ? 
+				subpixel(costs[x*maxdisp + std::max(minLIdx - 1, 0)],
+								costs[x*maxdisp + minLIdx],
+								costs[x*maxdisp + std::min(minLIdx + 1, maxdisp - 1)]) : 0;
+			auto res = std::round((minLIdx + sp)* muldisp);
+			dptr[y*width + x] =  abs(minLIdx - minRIdx) < 2 ? res  : 0;
 		}
 	}
 #endif

@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\cMatch.cpp" />
+    <ClCompile Include="src\imio.cpp">
+      <Filter>libs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imshow.cpp">
+      <Filter>libs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\bmMatch.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\cMatch.h" />
+    <ClInclude Include="src\geometric.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\image.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\image_filter.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imio.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imshow.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\stb_image.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\stb_image_write.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vecmatquat.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vecmatquat_minimal.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\bmMatch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="libs">
+      <UniqueIdentifier>{773551df-5833-48e2-8ec3-9bcd64fae195}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config">
+      <Filter>libs</Filter>
+    </None>
+  </ItemGroup>
+</Project>

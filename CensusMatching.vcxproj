@@ -126,6 +126,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\bmMatch.h" />
     <ClInclude Include="src\cMatch.h" />
     <ClInclude Include="src\geometric.h" />
     <ClInclude Include="src\image.h" />
@@ -134,10 +135,12 @@
     <ClInclude Include="src\imshow.h" />
     <ClInclude Include="src\stb_image.h" />
     <ClInclude Include="src\stb_image_write.h" />
+    <ClInclude Include="src\stereo.h" />
     <ClInclude Include="src\vecmatquat.h" />
     <ClInclude Include="src\vecmatquat_minimal.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\bmMatch.cpp" />
     <ClCompile Include="src\imio.cpp" />
     <ClCompile Include="src\imshow.cpp" />
     <ClCompile Include="src\Main.cpp" />
