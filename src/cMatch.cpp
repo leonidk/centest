@@ -85,7 +85,6 @@ void CensusMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img
     for(int y=B_R; y < height - B_R; y++) {
         costs.assign(width*maxdisp,std::numeric_limits<uint16_t>::max());
         for(int x=B_R; x < width - B_R; x++) {
-            //auto bl = std::max(0,x-maxdisp+1);
 			auto ul = std::min(width - B_R, x + maxdisp);
             for(int d=x; d < ul; d++) {
 				uint16_t cost = 0;
