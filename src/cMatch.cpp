@@ -9,7 +9,7 @@ using namespace stereo;
 #define		C_W		(2*C_R+1)
 
 // Box Filter Radius and Width
-#define		B_R		(3)
+#define		B_R		(8)
 #define		B_W		(2*B_R+1)
 
 // y,x

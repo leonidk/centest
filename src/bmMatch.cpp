@@ -5,7 +5,7 @@
 using namespace stereo;
 
 // Box Filter Radius and Width
-#define		B_R		(3)
+#define		B_R		(8)
 #define		B_W		(2*B_R+1)
 
 BMatch::BMatch(int w, int h, int d, int m)
@@ -64,7 +64,7 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
 	img::Img<float> costI(maxdisp, width, (float*)costs.data());
 	auto sqr = [](float diff){ return diff*diff; };
 
-//#define RIGHT_FRAME
+#define RIGHT_FRAME
 #ifdef RIGHT_FRAME
 	for (int y = B_R; y < height - B_R; y++) {
 		costs.assign(width*maxdisp, std::numeric_limits<float>::max());
@@ -110,24 +110,45 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
 		}
 	}
 #else
+	auto sign = [](float x) { return x >= 0 ? 1 : -1; };
+	auto halfx = (width - 1.0f) / 2.0f;
 	for (int y = B_R; y < height - B_R; y++) {
 		costs.assign(width*maxdisp, std::numeric_limits<float>::max());
+	//#pragma omp parallel for
 		for (int x = B_R; x < width - B_R; x++) {
 			auto lb = std::max(B_R, x - maxdisp);
 			auto search_limit = x - lb;
 			for (int d = 0; d < search_limit; d++) {
+				auto xf = (x - halfx) / halfx;
+				auto df = (x - d - halfx) / halfx; 
+				float ds, xs;
+				if (fabs(df) > fabs(xf)) {
+					ds = 1;
+					xs = sqr(df) / sqr(xf);
+				} else {
+					xs = 1;
+					ds = sqr(xf) / sqr(df);
+				}
 				float cost = 0;
-				for (int i = -B_R; i <= B_R; i++) {
-					for (int j = -B_R; j <= B_R; j++) {
-						auto pl = edgeLeft[(y + i)*width + (x + j)];
-						auto pr = edgeRight[(y + i)*width + (x + j - d)];
+				float n = 0;
+				if (df ==0 || xf == 0) {
+					ds = 1.f;
+					xs = 1.f;
+				}
+				//printf("%f %f\t", xs, ds);
 
+				for (int i = -B_R; i <= B_R; i++) {
+					for (int j = -B_R*ds; j <= B_R*ds; j++) {
+						auto pl = lc.sample(x + j*xs/ds, y + i, 0);
+						auto pr = rc.sample(x - d + j, y + i, 0);
+						n++;
 						cost += sqr(pl - pr);
 					}
 				}
-				costs[x*maxdisp + d] = cost;
+				costs[x*maxdisp + d] = cost/n;
 			}
 		}
+		//printf("\nsl %d\n",y);
 		for (int x = B_R; x < width - B_R; x++) {
 			auto minRVal = std::numeric_limits<float>::max();
 			auto minRIdx = 0;
