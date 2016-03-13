@@ -13,12 +13,14 @@ int main(int argc, char* argv[])
     auto input_fn = argv[3];
     auto output_fn = argv[4];
 
-    auto img = img::imread<uint8_t,3>(input_fn);
-    auto img_out = img::Image<uint8_t,3>(img.width/scale,img.height/scale);
+	const int channels = 3;
+
+    auto img = img::imread<uint8_t,channels>(input_fn);
+    auto img_out = img::Image<uint8_t,channels>(img.width/scale,img.height/scale);
     auto ptr2 = img_out.data.get();
     for (int y=0; y < img_out.height; y++) { 
         for (int x=0; x < img_out.width; x++) { 
-            for(int c=0; c < 3; c++){
+            for(int c=0; c < channels; c++){
                 auto xc = static_cast<float>(x*scale);
                 auto yc = static_cast<float>(y*scale);
                 float hw = img.width/2.0f;
@@ -33,7 +35,7 @@ int main(int argc, char* argv[])
                 } 
                 xc = xx*hw + hw;
                 yc = yy*hh + hh;
-                ptr2[3*(y*img_out.width+x)+c] = img.sample(xc,yc,c);
+                ptr2[channels*(y*img_out.width+x)+c] = img.sample(xc,yc,c);
             }
         }
     }
