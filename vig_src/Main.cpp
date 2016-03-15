@@ -1,5 +1,6 @@
 #include "../src/imio.h"
 #include <string>
+#include <random>
 
 int main(int argc, char* argv[])
 {
@@ -7,6 +8,7 @@ int main(int argc, char* argv[])
         printf("Usage: %s <fov> <input> <output>\n", argv[0]);
         return 1;
     }
+	std::default_random_engine generator;
 
     int hfov = atoi(argv[1]);
     auto input_fn = argv[2];
@@ -34,6 +36,8 @@ int main(int argc, char* argv[])
                 auto weight = dist/maxDist;
 
                 weight = tan(weight)/tan(1.0);
+				std::poisson_distribution<int> distribution(weight*5000);
+				weight = distribution(generator) / 5000.0;
 
                 ptr2[3*(y*img_out.width+x)+c] = weight*db*ptr[3*(y*img.width+x)+c] + (1-weight)*ptr[3*(y*img.width+x)+c];
             }

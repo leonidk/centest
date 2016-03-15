@@ -63,8 +63,8 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
 	img::Img<int16_t> rc(left.width, left.height, (int16_t*)edgeRight.data());
 	img::Img<float> costI(maxdisp, width, (float*)costs.data());
 	auto sqr = [](float diff){ return diff*diff; };
-
 #define RIGHT_FRAME
+
 #ifdef RIGHT_FRAME
 	for (int y = B_R; y < height - B_R; y++) {
 		costs.assign(width*maxdisp, std::numeric_limits<float>::max());
@@ -112,6 +112,8 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
 #else
 	auto sign = [](float x) { return x >= 0 ? 1 : -1; };
 	auto halfx = (width - 1.0f) / 2.0f;
+	auto halfy = (height - 1.0f) / 2.0f;
+
 	for (int y = B_R; y < height - B_R; y++) {
 		costs.assign(width*maxdisp, std::numeric_limits<float>::max());
 	//#pragma omp parallel for
@@ -121,26 +123,29 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
 			for (int d = 0; d < search_limit; d++) {
 				auto xf = (x - halfx) / halfx;
 				auto df = (x - d - halfx) / halfx; 
-				float ds, xs;
-				if (fabs(df) > fabs(xf)) {
-					ds = 1;
-					xs = sqr(df) / sqr(xf);
-				} else {
-					xs = 1;
-					ds = sqr(xf) / sqr(df);
-				}
+				auto yf = (y - halfy) / halfy;
+				//float ds, xs;
+				//if (fabs(df) > fabs(xf)) {
+				//	ds = 1;
+				//	xs = sqr(df) / sqr(xf);
+				//} else {
+				//	xs = 1;
+				//	ds = sqr(xf) / sqr(df);
+				//}
 				float cost = 0;
 				float n = 0;
-				if (df ==0 || xf == 0) {
-					ds = 1.f;
-					xs = 1.f;
-				}
+				//if (df ==0 || xf == 0) {
+				//	ds = 1.f;
+				//	xs = 1.f;
+				//}
 				//printf("%f %f\t", xs, ds);
 
 				for (int i = -B_R; i <= B_R; i++) {
-					for (int j = -B_R*ds; j <= B_R*ds; j++) {
-						auto pl = lc.sample(x + j*xs/ds, y + i, 0);
-						auto pr = rc.sample(x - d + j, y + i, 0);
+					for (int j = -B_R; j <= B_R; j++) {
+						//auto pl = lc.sample(x + j*xs/ds, y + i, 0);
+						//auto pr = rc.sample(x - d + j, y + i, 0);
+						auto pl = edgeLeft[(y + i)*width + (x + j)];
+						auto pr = edgeRight[(y + i)*width + (x + j - d)];
 						n++;
 						cost += sqr(pl - pr);
 					}

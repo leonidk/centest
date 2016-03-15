@@ -28,10 +28,13 @@ int main(int argc, char* argv[])
                 auto xx = (xc - hw)/hw;
                 auto yy = (yc - hh)/hh;
                 if(cubic&1) {  
-                    xx = xx * xx * xx;
+                    //xx = xx * xx * xx;
+					xx = sin(xx) * (1.0 / sin(1.0));
                 } 
                 if(cubic&2) {  
-                    yy = yy * yy * yy;
+                    //yy = yy * yy * yy;
+					yy = sin(yy) * (1.0 / sin(1.0));
+
                 } 
                 xc = xx*hw + hw;
                 yc = yy*hh + hh;

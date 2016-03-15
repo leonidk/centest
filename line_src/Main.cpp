@@ -14,8 +14,8 @@ void coord(double x,double y, int width, int height, double & xo, double & yo)
     //weight = tan(weight)/tan(1.0);
     //ptr2[3*(y*img_out.width+x)+c] = ptr[3*(y*img.width+x)+c];
     
-    xo = cbrt(xx)*hw + hw;
-    //xo = xx*hw+hw;
+    //xo = cbrt(xx)*hw + hw;
+    xo = xx*hw+hw;
     yo = cbrt(yy)*hh + hh;
     //yo = yy*hh+hh;
 }
