@@ -41,7 +41,7 @@ for proj, name in funcs:
 	#zf = simplify(zf[0])
 	dispf = solveset(zf-z, d,Interval(0,f)).condition.lhs # solve for D
 	#dispf = dispf.condition.lhs
-	
+
 	print 'd'
 	#if len(dispf) > 1:
 	#	print 'multiple answers!', dispf
@@ -52,10 +52,10 @@ for proj, name in funcs:
 	zf_z = simplify(zf_diff).subs(d,dispf) # substite d in
 	print 'zz'
 	print name
-	print "\tz(d) :", simplify(zf)
+	print "\tz(d) :", latex(simplify(zf))
 	print "\td(z) :", simplify(dispf)
-	print "\tzp(d):", simplify(zf_diff)
-	print "\tzp(z)", simplify(zf_z)
+	print "\tzp(d):", latex(simplify(zf_diff))
+	print "\tzp(z)", latex(simplify(zf_z))
 	err_func = Lambda((z), zf_z.subs(vals))
 	print err_func(0)
 	for i, xn in enumerate(xv):
