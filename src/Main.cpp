@@ -4,8 +4,8 @@
 #include "image_filter.h"
 int main(int argc, char* argv[])
 {
-    auto left = img::imread<uint8_t,3>(R"(C:\Users\nid\Desktop\centest\Out_Data\linear\left-dist.png)");
-	auto right = img::imread<uint8_t, 3>(R"(C:\Users\nid\Desktop\centest\Out_Data\linear\right-dist.png)");
+    auto left = img::imread<uint8_t,3>(R"(rectification/left-both-x2.png)");
+	auto right = img::imread<uint8_t, 3>(R"(rectification/right-both-x2.png)");
 	//auto gt = img::imread<uint8_t,1>("test_data/disp0-1.png");
    
     auto left_g = img::Rgb2grey(left);
@@ -46,6 +46,6 @@ int main(int argc, char* argv[])
 		//mse += gptr[i] && dptr[i] && gptr[i] != 255 ? sqr(gptr[i] - dptr[i]) : 0;
     }
 	printf("%f\n", (mse / (ot.width*ot.height)));
-	img::imwrite(R"(C:\Users\nid\Desktop\centest\Out_Data\linear\dist-out.png)", ot);
+	img::imwrite(R"(rectification/disp-both-x2.png)", ot);
 	return 0;
 }

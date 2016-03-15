@@ -1,6 +1,6 @@
 #include "../src/imio.h"
 #include <opencv\cv.h>
-
+#include <opencv2/highgui/highgui.hpp>
 int main(int argc, char* argv[])
 {
 	if (argc < 4) {
@@ -11,8 +11,9 @@ int main(int argc, char* argv[])
 	int hfov = atoi(argv[1]);
 	auto input_fn = argv[2];
 	auto output_fn = argv[3];
-
-	auto img = img::imread<uint8_t, 3>(input_fn);
+	auto cvIMG = cv::imread(input_fn);
+	cv::resize(cvIMG, cvIMG, cv::Size(), 0.25, 0.25, cv::INTER_AREA);
+	auto img = img::Image<uint8_t, 3>(cvIMG.cols, cvIMG.rows, cvIMG.data);
 	auto img_out = img::Image<uint8_t, 3>(img.width, img.height);
 	auto ptr = img.data.get();
 	auto ptr2 = img_out.data.get();
@@ -43,7 +44,7 @@ int main(int argc, char* argv[])
 				auto orig_matchy = atan(mapped_matchy*tan(1.0));
 				auto matchy = orig_matchy*hh + hh;
 
-				remap1.at<cv::Vec2f>(y, x) = cv::Vec2f(match, matchy);
+				remap1.at<cv::Vec2f>(y, x) = cv::Vec2f(match,matchy);
 			}
 		}
 	}
