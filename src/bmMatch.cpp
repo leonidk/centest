@@ -1,6 +1,7 @@
 #include "bmMatch.h"
 #include <limits>
 #include <algorithm>
+#include <cmath>
 
 using namespace stereo;
 
@@ -29,7 +30,7 @@ static void edgeDetect(uint8_t * in, int16_t * out, int w, int h)
 					  + in[(y + 1)*w + (x - 1)]
 					  +2*in[(y + 1)*w + (x - 0)]
 					  + in[(y + 1)*w + (x + 1)];
-			out[y*w + x] = (int)std::round(std::sqrtf(dx*dx+dy*dy));
+			out[y*w + x] = (int)std::round(sqrtf(dx*dx+dy*dy));
 		}
 	}
 }
