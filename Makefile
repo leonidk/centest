@@ -15,7 +15,7 @@ COMPILE_FLAGS = -std=c++11
 # Additional release-specific flags
 RCOMPILE_FLAGS = -D NDEBUG -march=native -Ofast
 # Additional debug-specific flags
-DCOMPILE_FLAGS = -D DEBUG
+DCOMPILE_FLAGS = -D DEBUG -g
 # Add additional include paths
 INCLUDES = -I $(SRC_PATH)/
 # General linker settings
