@@ -10,10 +10,10 @@ SRC_PATH = ./src
 # Space-separated pkg-config libraries used by this project
 LIBS = gl glfw3
 # General compiler flags
-COMPILE_FLAGS = -std=c++11 -g 
+COMPILE_FLAGS = -std=c++11  
 #COMPILE_FLAGS = -std=c++11 -g -w  
 # Additional release-specific flags
-RCOMPILE_FLAGS = -D NDEBUG -march=native -O3
+RCOMPILE_FLAGS = -D NDEBUG -march=native -Ofast
 # Additional debug-specific flags
 DCOMPILE_FLAGS = -D DEBUG
 # Add additional include paths
