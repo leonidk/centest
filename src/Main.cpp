@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
    
     auto left_g = img::Rgb2grey(left);
     auto right_g = img::Rgb2grey(right);
-	stereo::BMatch cm(left.width, left.height, 40, 4);
+	stereo::BMatch cm(left.width, left.height, 64, 4);
 	auto disp = cm.match(left_g, right_g);
 
 	auto ot = img::Image<uint8_t, 1>(disp.width, disp.height);

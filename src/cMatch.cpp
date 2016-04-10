@@ -9,8 +9,11 @@ using namespace stereo;
 #define		C_W		(2*C_R+1)
 
 // Box Filter Radius and Width
-#define		B_R		(8)
+#define		B_R		(3)
 #define		B_W		(2*B_R+1)
+
+// Left-Right Threshold
+#define		LRT		(2)
 
 // y,x
 const int samples[] =
@@ -133,7 +136,7 @@ void CensusMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img
 				}
 			}
 
-			dptr[y*width + x] = abs(minLIdx - minRIdx) < 2 ? minRIdx * muldisp : 0;
+			dptr[y*width + x] = abs(minLIdx - minRIdx) < LRT ? minRIdx * muldisp : 0;
 		}
 	}
 #else
@@ -181,8 +184,8 @@ void CensusMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img
 				subpixel(costs[x*maxdisp + std::max(minLIdx - 1, 0)],
 								costs[x*maxdisp + minLIdx],
 								costs[x*maxdisp + std::min(minLIdx + 1, maxdisp - 1)]) : 0;
-			auto res = std::round((minLIdx + sp)* muldisp);
-			dptr[y*width + x] =  abs(minLIdx - minRIdx) < 2 ? res  : 0;
+			uint16_t res = (uint16_t)std::round((minLIdx + sp)* muldisp);
+			dptr[y*width + x] = abs(minLIdx - minRIdx) < LRT ? res : 0;
 		}
 	}
 #endif
