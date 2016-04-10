@@ -10,6 +10,7 @@
       <Filter>libs</Filter>
     </ClCompile>
     <ClCompile Include="src\bmMatch.cpp" />
+    <ClCompile Include="src\r200Match.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\cMatch.h" />
@@ -41,6 +42,8 @@
       <Filter>libs</Filter>
     </ClInclude>
     <ClInclude Include="src\bmMatch.h" />
+    <ClInclude Include="src\stereo.h" />
+    <ClInclude Include="src\r200Match.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="libs">
