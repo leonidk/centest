@@ -19,20 +19,20 @@ int main(int argc, char* argv[])
    
     auto left_g = img::Rgb2grey(left);
     auto right_g = img::Rgb2grey(right);
-	stereo::R200Match cm(left.width, left.height, 64, 4);
-	auto disp = cm.match(left_g, right_g);
+    stereo::R200Match cm(left.width, left.height, 64, 4);
+    auto disp = cm.match(left_g, right_g);
 
-	auto ot = img::Image<uint8_t, 1>(disp.width, disp.height);
+    auto ot = img::Image<uint8_t, 1>(disp.width, disp.height);
     auto dptr = disp.data.get();
     auto optr = ot.data.get();
-	memset(optr, 0, disp.width*disp.height);
+    memset(optr, 0, disp.width*disp.height);
 
-	float mse = 0;
-	auto sqr = [](float a) {  return a*a; };
+    float mse = 0;
+    auto sqr = [](float a) {  return a*a; };
     for(int i=0; i < ot.width*ot.height; i++)
     {
         optr[i] = (uint8_t)dptr[i];
     }
     img::imwrite("disp-out.png",ot);
-	return 0;
+    return 0;
 }
