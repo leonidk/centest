@@ -39,6 +39,15 @@ using namespace stereo;
 #define        MM       (5)
 #define        MT       (192)
 
+// sampling pattern
+// . X . X . X .
+// X . X . X . X
+// . X . X . X .
+// X . X 0 X . X
+// . X . X . X .
+// X . X . X . X
+// . X . X . X .
+
 // y,x
 const int samples[] =
 {
