@@ -174,9 +174,9 @@ void R200Match::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
             auto spL = (minLIdx > 0 && minLIdx < maxdisp-1) ? 
                 subpixel(nL,nC,nR) : 0;
             // subpixel right
-            auto rL = costs[(x-1)*maxdisp + minLIdx-1];
+            auto rL = costs[(x-1)*maxdisp + std::max(minLIdx - 1, 0)];
             auto rC = costs[(x)*maxdisp + minLIdx];
-            auto rR = costs[(x+1)*maxdisp + minLIdx+1];
+            auto rR = costs[(x+1)*maxdisp + std::min(minLIdx + 1, maxdisp - 1)];
             auto spR = (minLIdx > 0 && minLIdx < maxdisp - 1) ?
                 subpixel(rL,rC,rR) : 0;
 

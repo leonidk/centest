@@ -154,6 +154,7 @@
     <ClInclude Include="src\imio.h" />
     <ClInclude Include="src\imshow.h" />
     <ClInclude Include="src\r200Match.h" />
+    <ClInclude Include="src\sgbmMatch.h" />
     <ClInclude Include="src\stb_image.h" />
     <ClInclude Include="src\stb_image_write.h" />
     <ClInclude Include="src\stereo.h" />
@@ -167,6 +168,7 @@
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\cMatch.cpp" />
     <ClCompile Include="src\r200Match.cpp" />
+    <ClCompile Include="src\sgbmMatch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

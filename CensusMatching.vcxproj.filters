@@ -11,6 +11,7 @@
     </ClCompile>
     <ClCompile Include="src\bmMatch.cpp" />
     <ClCompile Include="src\r200Match.cpp" />
+    <ClCompile Include="src\sgbmMatch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\cMatch.h" />
@@ -44,6 +45,7 @@
     <ClInclude Include="src\bmMatch.h" />
     <ClInclude Include="src\stereo.h" />
     <ClInclude Include="src\r200Match.h" />
+    <ClInclude Include="src\sgbmMatch.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="libs">
