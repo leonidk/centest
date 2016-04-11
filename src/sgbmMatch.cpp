@@ -21,44 +21,45 @@ using namespace stereo;
 
 // Left-Right Threshold
 // Dependent on subpixel algorithm. May not work well with subpixel
-#define        LRT      (2)
-#define        LRS      (0.75f)
+#define        LRT          (2)
+#define        LRS          (0.75f)
 
 // Neighbor Threshold
-#define        NT       (20)
+#define        NT           (20)
 
 // Second Peak
-#define        SP       (50)
+#define        SP           (50)
 
 // Texture Diff (commented out below)
-#define        TD       (4)
-#define        TC       (6)
+#define        TD           (4)
+#define        TC           (6)
 
 // Score Limits
-#define        SMIN     (1)
-#define        SMAX     (200*384)
+#define        SMIN         (1)
+#define        SMAX         (200*384)
 
 // Median
-#define        MP       (10)
-#define        MM       (10)
-#define        MT       (500)
+#define        MP           (10)
+#define        MM           (10)
+#define        MT           (500)
 
 // SGM Settings
-#define        P1       (2000)
-#define        P2       (4*P1)
+#define        P1           (2000)
+#define        P2           (4*P1)
 
-#define        MAXCOST  (0x00ffffff)
-#define        USE_SGM  1
+#define        MAXCOST      (0x00ffffff)
+#define        USE_SGM      1
 
 // scale SGM P2 as P2 = P2/grad. 
 // should make propogation stop at edges
-// but seems to have no effect. Either a
-// bug or simply not a useful concept. 
-#define        SCALE_P2 0 
+#define        SCALE_P2     1 
 
 //bilateral filter on the weights
-#define        USE_BLF     1
-#define        RANGESIGMA (5*5)
+#define        USE_BLF      1
+#define        RANGESIGMA   (5*5)
+
+// hole filling
+#define        MOVE_LEFT    1
 
 // sampling pattern
 // . X . X . X .
@@ -222,11 +223,11 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
            for (int x = 1; x < width; x++) {
                auto p1 = P1;
                auto p2 = P2;
-#ifdef SCALE_P2
-               auto grad = abs(lptr[y*width + x-1] - lptr[y*width + x]) + 1;
-               p2 = (p2+grad-1)/grad;
-               p1 = std::min(p1, p2 - 1);
-#endif
+               if (SCALE_P2) {
+                   auto grad = abs(lptr[y*width + x - 1] - lptr[y*width + x]) + 1;
+                   p2 = (p2 + grad - 1) / grad;
+                   p1 = std::min(p1, p2 - 1);
+               }
                auto lftI = 0;
                auto lftV = INT_MAX;
                for (int d = 0; d < maxdisp; d++){
@@ -251,11 +252,11 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
            for (int x = 0; x < width; x++) {
                auto p1 = P1;
                auto p2 = P2;
-#ifdef SCALE_P2
-               auto grad = abs(lptr[(y - 1)*width + x] - lptr[y*width + x]) + 1;
-               p2 = (p2 + grad - 1) / grad;
-               p1 = std::min(p1, p2 - 1);
-#endif
+               if (SCALE_P2) {
+                   auto grad = abs(lptr[(y - 1)*width + x] - lptr[y*width + x]) + 1;
+                   p2 = (p2 + grad - 1) / grad;
+                   p1 = std::min(p1, p2 - 1);
+               }
                auto topI = 0;
                auto topV = INT_MAX;
                for (int d = 0; d < maxdisp; d++){
@@ -279,11 +280,11 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
            for (int x = 1; x < width; x++) {
                auto p1 = P1;
                auto p2 = P2;
-#ifdef SCALE_P2
-               auto grad = abs(lptr[(y - 1)*width + x - 1] - lptr[y*width + x]) + 1;
-               p2 = (p2 + grad - 1) / grad;
-               p1 = std::min(p1, p2 - 1);
-#endif
+               if (SCALE_P2) {
+                   auto grad = abs(lptr[(y - 1)*width + x - 1] - lptr[y*width + x]) + 1;
+                   p2 = (p2 + grad - 1) / grad;
+                   p1 = std::min(p1, p2 - 1);
+               }
                auto tplI = 0;
                auto tplV = INT_MAX;
                for (int d = 0; d < maxdisp; d++){
@@ -308,11 +309,11 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
            for (int x = width - 2; x >= 0; x--) {
                auto p1 = P1;
                auto p2 = P2;
-#ifdef SCALE_P2
-               auto grad = abs(lptr[(y)*width + x + 1] - lptr[y*width + x]) + 1;
-               p2 = (p2 + grad - 1) / grad;
-               p1 = std::min(p1, p2 - 1);
-#endif
+               if (SCALE_P2) {
+                   auto grad = abs(lptr[(y)*width + x + 1] - lptr[y*width + x]) + 1;
+                   p2 = (p2 + grad - 1) / grad;
+                   p1 = std::min(p1, p2 - 1);
+               }
                auto rgtI = 0;
                auto rgtV = INT_MAX;
                for (int d = 0; d < maxdisp; d++){
@@ -337,11 +338,11 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
            for (int x = width - 2; x >= 0; x--) {
                auto p1 = P1;
                auto p2 = P2;
-#ifdef SCALE_P2
-               auto grad = abs(lptr[(y - 1)*width + x + 1] - lptr[y*width + x]) + 1;
-               p2 = (p2 + grad - 1) / grad;
-               p1 = std::min(p1, p2 - 1);
-#endif
+               if (SCALE_P2) {
+                   auto grad = abs(lptr[(y - 1)*width + x + 1] - lptr[y*width + x]) + 1;
+                   p2 = (p2 + grad - 1) / grad;
+                   p1 = std::min(p1, p2 - 1);
+               }
                auto rgtI = 0;
                auto rgtV = INT_MAX;
                for (int d = 0; d < maxdisp; d++){
@@ -467,7 +468,14 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                     me -= MM;
             }
             res = (me-minLVal > MT) ? res : 0;
-
+            if (MOVE_LEFT && res == 0) {
+                for (int xc = x - 1; xc >= 0; xc--) {
+                    if (dptr[y*width + xc] != 0) {
+                        res = dptr[y*width + xc];
+                        break;
+                    }
+                }
+            }
             // final set
             dptr[y*width + x] = res;
         }
