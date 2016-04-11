@@ -57,6 +57,7 @@ using namespace stereo;
 //bilateral filter on the weights
 #define        USE_BLF      1
 #define        RANGESIGMA   (5*5)
+#define        SPACESIGMA   ((B_R / 2.0f)*(B_R / 2.0f))
 
 // hole filling
 #define        MOVE_LEFT    1
@@ -169,7 +170,7 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                     for (int j = -B_R; j <= B_R; j++) {
                         float px = lptr[(y + i)*width + (x + j)];
                         auto rw = expf(-(px - middlePx) / (2.f * RANGESIGMA));
-                        auto sw = expf(-sqrtf((float)(i*i + j*j)) / (2.f * (B_R / 2.0f)*(B_R / 2.0f)));
+                        auto sw = expf(-sqrtf((float)(i*i + j*j)) / (2.f * SPACESIGMA));
                         bilateralWeights[(i+B_R)*B_W + (j+B_R)] = rw*sw;
                         blW += rw*sw;
                     }
