@@ -18,7 +18,7 @@ using namespace stereo;
 // Left-Right Threshold
 // Dependent on subpixel algorithm. May not work well with subpixel
 // SGM does crazy things here. Effectively turned off now
-#define        LRT      (256)
+#define        LRT      (256.0f)
 #define        LRS      (256.0f)
 
 // Neighbor Threshold
@@ -41,13 +41,20 @@ using namespace stereo;
 #define        MT       (192)
 
 // SGM Settings
-#define        P1       (25)
+#define        P1       (50)
 #define        P2       (10*P1)
 
 #define        MAXCOST  (0x00ffffff)
 #define        USE_SGM  1
 
-#define        USE_BLF  1
+// scale SGM P2 as P2 = P2/grad. 
+// should make propogation stop at edges
+// but seems to have no effect. Either a
+// bug or simply not a useful concept. 
+#define        SCALE_P2 0 
+
+//bilateral filter on the weights
+#define        USE_BLF  0
 #define        RANGESIGMA (5*5)
 
 // sampling pattern
@@ -204,6 +211,13 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
 
            //left
            for (int x = 1; x < width; x++) {
+               auto p1 = P1;
+               auto p2 = P2;
+#ifdef SCALE_P2
+               auto grad = abs(lptr[y*width + x-1] - lptr[y*width + x]) + 1;
+               p2 = (p2+grad-1)/grad;
+               p1 = std::min(p1, p2 - 1);
+#endif
                auto lftI = 0;
                auto lftV = INT_MAX;
                for (int d = 0; d < maxdisp; d++){
@@ -217,8 +231,8 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                    //left
                    int lftcost = leftCosts[(x - 1)*maxdisp + d];
                    int lftcostP1 = std::min(leftCosts[(x - 1)*maxdisp + clipD(lftI + 1)],
-                       leftCosts[(x - 1)*maxdisp + clipD(lftI - 1)]) + P1;
-                   int lftcostP2 = lftV + P2;
+                       leftCosts[(x - 1)*maxdisp + clipD(lftI - 1)]) + p1;
+                   int lftcostP2 = lftV + p2;
                    int lftC = (int)std::min({ lftcost, lftcostP1, lftcostP2 }) - (int)lftV;
 
                    leftCosts[x*maxdisp + d] = costs[x*maxdisp+d] + lftC;
@@ -226,6 +240,13 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
            }
            //top
            for (int x = 0; x < width; x++) {
+               auto p1 = P1;
+               auto p2 = P2;
+#ifdef SCALE_P2
+               auto grad = abs(lptr[(y - 1)*width + x] - lptr[y*width + x]) + 1;
+               p2 = (p2 + grad - 1) / grad;
+               p1 = std::min(p1, p2 - 1);
+#endif
                auto topI = 0;
                auto topV = INT_MAX;
                for (int d = 0; d < maxdisp; d++){
@@ -238,8 +259,8 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                for (int d = 0; d < maxdisp; d++) {
                    int topcost = topCosts[(x )*maxdisp + d];
                    int topcostP1 = std::min(topCosts[(x )*maxdisp + clipD(topI + 1)],
-                       topCosts[(x)*maxdisp + clipD(topI - 1)]) + P1;
-                   int topcostP2 = topV + P2;
+                       topCosts[(x)*maxdisp + clipD(topI - 1)]) + p1;
+                   int topcostP2 = topV + p2;
                    int topC = (int)std::min({ topcost, topcostP1, topcostP2 }) - (int)topV;
 
                    topCosts[x*maxdisp + d] = costs[x*maxdisp + d] + topC;
@@ -247,6 +268,13 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
            }
            // topleft
            for (int x = 1; x < width; x++) {
+               auto p1 = P1;
+               auto p2 = P2;
+#ifdef SCALE_P2
+               auto grad = abs(lptr[(y - 1)*width + x - 1] - lptr[y*width + x]) + 1;
+               p2 = (p2 + grad - 1) / grad;
+               p1 = std::min(p1, p2 - 1);
+#endif
                auto tplI = 0;
                auto tplV = INT_MAX;
                for (int d = 0; d < maxdisp; d++){
@@ -260,8 +288,8 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                    //left
                    int tplcost = topLeftCosts[(x - 1)*maxdisp + d];
                    int tplcostP1 = std::min(topLeftCosts[(x - 1)*maxdisp + clipD(tplI + 1)],
-                       topLeftCosts[(x - 1)*maxdisp + clipD(tplI - 1)]) + P1;
-                   int tplcostP2 = tplV + P2;
+                       topLeftCosts[(x - 1)*maxdisp + clipD(tplI - 1)]) + p1;
+                   int tplcostP2 = tplV + p2;
                    int tplC = (int)std::min({ tplcost, tplcostP1, tplcostP2 }) - (int)tplV;
 
                    topLeftCosts[x*maxdisp + d] = costs[x*maxdisp + d] + tplC;
@@ -269,6 +297,13 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
            }
            //right
            for (int x = width - 2; x >= 0; x--) {
+               auto p1 = P1;
+               auto p2 = P2;
+#ifdef SCALE_P2
+               auto grad = abs(lptr[(y)*width + x + 1] - lptr[y*width + x]) + 1;
+               p2 = (p2 + grad - 1) / grad;
+               p1 = std::min(p1, p2 - 1);
+#endif
                auto rgtI = 0;
                auto rgtV = INT_MAX;
                for (int d = 0; d < maxdisp; d++){
@@ -282,8 +317,8 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                    //left
                    int rgtcost = rightCosts[(x + 1)*maxdisp + d];
                    int rgtcostP1 = std::min(rightCosts[(x + 1)*maxdisp + clipD(rgtI + 1)],
-                       rightCosts[(x + 1)*maxdisp + clipD(rgtI - 1)]) + P1;
-                   int rgtcostP2 = rgtV + P2;
+                       rightCosts[(x + 1)*maxdisp + clipD(rgtI - 1)]) + p1;
+                   int rgtcostP2 = rgtV + p2;
                    int rgtC = (int)std::min({ rgtcost, rgtcostP1, rgtcostP2 }) - (int)rgtV;
 
                    rightCosts[x*maxdisp + d] = costs[x*maxdisp + d] + rgtC;
@@ -291,6 +326,13 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
            }
            //topRight
            for (int x = width - 2; x >= 0; x--) {
+               auto p1 = P1;
+               auto p2 = P2;
+#ifdef SCALE_P2
+               auto grad = abs(lptr[(y - 1)*width + x + 1] - lptr[y*width + x]) + 1;
+               p2 = (p2 + grad - 1) / grad;
+               p1 = std::min(p1, p2 - 1);
+#endif
                auto rgtI = 0;
                auto rgtV = INT_MAX;
                for (int d = 0; d < maxdisp; d++){
@@ -304,8 +346,8 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                    //left
                    int rgtcost = topRightCosts[(x + 1)*maxdisp + d];
                    int rgtcostP1 = std::min(topRightCosts[(x + 1)*maxdisp + clipD(rgtI + 1)],
-                       topRightCosts[(x + 1)*maxdisp + clipD(rgtI - 1)]) + P1;
-                   int rgtcostP2 = rgtV + P2;
+                       topRightCosts[(x + 1)*maxdisp + clipD(rgtI - 1)]) + p1;
+                   int rgtcostP2 = rgtV + p2;
                    int rgtC = (int)std::min({ rgtcost, rgtcostP1, rgtcostP2 }) - (int)rgtV;
 
                    topRightCosts[x*maxdisp + d] = costs[x*maxdisp + d] + rgtC;
