@@ -9,12 +9,15 @@ As such, the code has basically no comments and poor interfaces for most of it's
 * Semiglobal Matching (5 paths), with SAD + Census cost metrics, subpixel matching, R200 thresholds, discontinuity scaling for SGM, naive hole filling and bilateral filter window weights. Only on the left-frame perspective.
 
 ## Dependencies
+* C++11 compliant compiler
 * GLFW3 (not used in any code path as of April 2016)
 
 ## Building
 ### Windows
 * Pull down a version of this repository
 * A Visual Studio 2013 Solution is included in msvc/
+* CensusMatching is the primary project of interest
+* GLFW3 is installed via a NuGet Package, so Visual Studio should pull it down automatically. 
 
 ### Linux
 * Pull down a version of this repository.
