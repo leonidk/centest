@@ -15,6 +15,10 @@ using namespace stereo;
 #define        B_R      (3)
 #define        B_W      (2*B_R+1)
 
+// Cost Multipliers
+#define        C_M      (10)
+#define        A_M      (1)
+
 // Left-Right Threshold
 // Dependent on subpixel algorithm. May not work well with subpixel
 #define        LRT      (2)
@@ -32,7 +36,7 @@ using namespace stereo;
 
 // Score Limits
 #define        SMIN     (1)
-#define        SMAX     (20*384)
+#define        SMAX     (200*384)
 
 // Median
 #define        MP       (10)
@@ -40,7 +44,7 @@ using namespace stereo;
 #define        MT       (500)
 
 // SGM Settings
-#define        P1       (200)
+#define        P1       (2000)
 #define        P2       (4*P1)
 
 #define        MAXCOST  (0x00ffffff)
@@ -53,7 +57,7 @@ using namespace stereo;
 #define        SCALE_P2 0 
 
 //bilateral filter on the weights
-#define        USE_BLF  1
+#define        USE_BLF     1
 #define        RANGESIGMA (5*5)
 
 // sampling pattern
@@ -177,7 +181,10 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                             auto pl = censusLeft[(y + i)*width + (x + j)];
                             auto pr = censusRight[(y + i)*width + (x + j - d)];
 
-                            cost += bilateralWeights[(i + B_R)*B_W + (j + B_R)] * popcount(pl ^ pr);
+                            auto al = lptr[(y + i)*width + (x + j)];
+                            auto ar = rptr[(y + i)*width + (x + j - d)];
+
+                            cost += bilateralWeights[(i + B_R)*B_W + (j + B_R)] * (C_M*popcount(pl ^ pr) + A_M*abs(al - ar));
                         }
                     }
                     costs[x*maxdisp + d] = (uint32_t) std::round((B_W*B_W)*cost/blW);
@@ -194,7 +201,10 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                             auto pl = censusLeft[(y + i)*width + (x + j)];
                             auto pr = censusRight[(y + i)*width + (x + j -d)];
 
-                            cost += popcount(pl ^ pr);
+                            auto al = lptr[(y + i)*width + (x + j)];
+                            auto ar = rptr[(y + i)*width + (x + j - d)];
+
+                            cost += C_M*popcount(pl ^ pr) + A_M*abs(al-ar);
                         }
                     }
                     costs[x*maxdisp + d] = cost;
