@@ -6,7 +6,7 @@ As such, the code has basically no comments and poor interfaces for most of it's
 * SSD Block Matching (with an optional Sobel prefilter), for Left + Right frame perspective, with quadratic subpixel estimation
 * Census Matching (24 bit, 7x7 descriptor) + Block Matching, for Left + Right frame perspective, with linear subpixel estimation
 * Census (left frame only) with thresholds from the [Intel RealSense R200](https://github.com/IntelRealSense/librealsense/blob/master/include/librealsense/rsutil.h). Implemented as documented in [Intel's released documentation](https://github.com/PercATI/RealSense_ROS/blob/master/r200_install/Include/DSAPI/DSAPITypes.h)
-* Semiglobal Matching (5 paths), with SAD + Census cost metrics, subpixel matching, R200 thresholds, and bilateral filter window weights. Only on the left-frame perspective.
+* Semiglobal Matching (5 paths), with SAD + Census cost metrics, subpixel matching, R200 thresholds, discontinuity scaling for SGM, naive hole filling and bilateral filter window weights. Only on the left-frame perspective.
 
 ## Dependencies
 * GLFW3 (not used in any code path as of April 2016)
