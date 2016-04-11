@@ -230,7 +230,7 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                    p1 = std::min(p1, p2 - 1);
                }
                auto lftI = 0;
-               auto lftV = INT_MAX;
+               auto lftV = MAXCOST;
                for (int d = 0; d < maxdisp; d++){
                    auto cost = leftCosts[(x - 1)*maxdisp + d];
                    if (cost < lftV) {
@@ -259,7 +259,7 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                    p1 = std::min(p1, p2 - 1);
                }
                auto topI = 0;
-               auto topV = INT_MAX;
+               auto topV = MAXCOST;
                for (int d = 0; d < maxdisp; d++){
                    auto cost = topCosts[(x)*maxdisp + d];
                    if (cost < topV) {
@@ -287,7 +287,7 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                    p1 = std::min(p1, p2 - 1);
                }
                auto tplI = 0;
-               auto tplV = INT_MAX;
+               auto tplV = MAXCOST;
                for (int d = 0; d < maxdisp; d++){
                    auto cost = topLeftCosts[(x - 1)*maxdisp + d];
                    if (cost < tplV) {
@@ -316,7 +316,7 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                    p1 = std::min(p1, p2 - 1);
                }
                auto rgtI = 0;
-               auto rgtV = INT_MAX;
+               auto rgtV = MAXCOST;
                for (int d = 0; d < maxdisp; d++){
                    auto cost = rightCosts[(x + 1)*maxdisp + d];
                    if (cost < rgtV) {
@@ -345,7 +345,7 @@ void sgbmMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::
                    p1 = std::min(p1, p2 - 1);
                }
                auto rgtI = 0;
-               auto rgtV = INT_MAX;
+               auto rgtV = MAXCOST;
                for (int d = 0; d < maxdisp; d++){
                    auto cost = topRightCosts[(x + 1)*maxdisp + d];
                    if (cost < rgtV) {
