@@ -12,17 +12,16 @@ using namespace stereo;
 #define        C_W      (2*C_R+1)
 
 // Box Filter Radius and Width
-#define        B_R      (1)
+#define        B_R      (3)
 #define        B_W      (2*B_R+1)
 
 // Left-Right Threshold
 // Dependent on subpixel algorithm. May not work well with subpixel
-// SGM does crazy things here. Effectively turned off now
-#define        LRT      (256.0f)
-#define        LRS      (256.0f)
+#define        LRT      (2)
+#define        LRS      (0.75f)
 
 // Neighbor Threshold
-#define        NT       (50)
+#define        NT       (20)
 
 // Second Peak
 #define        SP       (50)
@@ -32,17 +31,17 @@ using namespace stereo;
 #define        TC       (6)
 
 // Score Limits
-#define        SMIN     (0)
-#define        SMAX     (5*384)
+#define        SMIN     (1)
+#define        SMAX     (20*384)
 
 // Median
-#define        MP       (5)
-#define        MM       (5)
-#define        MT       (192)
+#define        MP       (10)
+#define        MM       (10)
+#define        MT       (500)
 
 // SGM Settings
-#define        P1       (50)
-#define        P2       (10*P1)
+#define        P1       (200)
+#define        P2       (4*P1)
 
 #define        MAXCOST  (0x00ffffff)
 #define        USE_SGM  1
@@ -54,7 +53,7 @@ using namespace stereo;
 #define        SCALE_P2 0 
 
 //bilateral filter on the weights
-#define        USE_BLF  0
+#define        USE_BLF  1
 #define        RANGESIGMA (5*5)
 
 // sampling pattern
