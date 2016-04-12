@@ -1,47 +1,50 @@
 #include "bmMatch.h"
-#include <limits>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 using namespace stereo;
 
 // Box Filter Radius and Width
-#define     B_R     (3)
-#define     B_W     (2*B_R+1)
+#define B_R (3)
+#define B_W (2 * B_R + 1)
 
 // Left-Right Threshold
-#define     LRT     (2)
+#define LRT (2)
 
 BMatch::BMatch(int w, int h, int d, int m)
-    : StereoMatch(w, h, d, m), costs(w*d), edgeLeft(w*h, 0), edgeRight(w*h, 0)
+    : StereoMatch(w, h, d, m)
+    , costs(w * d)
+    , edgeLeft(w * h, 0)
+    , edgeRight(w * h, 0)
 {
 }
 
-static void edgeDetect(uint8_t * in, int16_t * out, int w, int h)
+static void edgeDetect(uint8_t* in, int16_t* out, int w, int h)
 {
     for (int y = 1; y < h - 1; y++) {
         for (int x = 1; x < w - 1; x++) {
-            auto dx = - in[(y - 1)*w + (x - 1)] 
-                      + in[(y - 1)*w + (x + 1)]
-                      -2*in[(y - 0)*w + (x - 1)]
-                      +2*in[(y - 0)*w + (x + 1)]
-                      - in[(y + 1)*w + (x - 1)]
-                      + in[(y + 1)*w + (x + 1)];
-            auto dy = - in[(y - 1)*w + (x - 1)] 
-                      -2*in[(y - 1)*w + (x - 0)]
-                      - in[(y - 1)*w + (x + 1)]
-                      + in[(y + 1)*w + (x - 1)]
-                      +2*in[(y + 1)*w + (x - 0)]
-                      + in[(y + 1)*w + (x + 1)];
-            out[y*w + x] = (int)std::round(sqrtf((float)(dx*dx+dy*dy)));
+            auto dx = -in[(y - 1) * w + (x - 1)]
+                + in[(y - 1) * w + (x + 1)]
+                - 2 * in[(y - 0) * w + (x - 1)]
+                + 2 * in[(y - 0) * w + (x + 1)]
+                - in[(y + 1) * w + (x - 1)]
+                + in[(y + 1) * w + (x + 1)];
+            auto dy = -in[(y - 1) * w + (x - 1)]
+                - 2 * in[(y - 1) * w + (x - 0)]
+                - in[(y - 1) * w + (x + 1)]
+                + in[(y + 1) * w + (x - 1)]
+                + 2 * in[(y + 1) * w + (x - 0)]
+                + in[(y + 1) * w + (x + 1)];
+            out[y * w + x] = (int)std::round(sqrtf((float)(dx * dx + dy * dy)));
         }
     }
 }
-static void edgeDetectDummy(uint8_t * in, int16_t * out, int w, int h)
+static void edgeDetectDummy(uint8_t* in, int16_t* out, int w, int h)
 {
     for (int y = 1; y < h - 1; y++) {
         for (int x = 1; x < w - 1; x++) {
-            out[y*w + x] = in[y*w + x];
+            out[y * w + x] = in[y * w + x];
         }
     }
 }
@@ -51,10 +54,10 @@ static float subpixel(float costLeft, float costMiddle, float costRight)
     if (costMiddle >= 0xfffe || costLeft >= 0xfffe || costRight >= 0xfffe)
         return 0.f;
     auto num = costRight - costLeft;
-    auto den = (2 * (costRight + costLeft - 2*costMiddle));
-    return den != 0 ? 0.5f*( num/ den) : 0;
+    auto den = (2 * (costRight + costLeft - 2 * costMiddle));
+    return den != 0 ? 0.5f * (num / den) : 0;
 }
-void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img<uint16_t> & disp)
+void BMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Img<uint16_t>& disp)
 {
     auto lptr = left.data.get();
     auto rptr = right.data.get();
@@ -66,25 +69,25 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
     img::Img<int16_t> lc(left.width, left.height, (int16_t*)edgeLeft.data());
     img::Img<int16_t> rc(left.width, left.height, (int16_t*)edgeRight.data());
     img::Img<float> costI(maxdisp, width, (float*)costs.data());
-    auto sqr = [](float diff){ return diff*diff; };
+    auto sqr = [](float diff) { return diff * diff; };
 #define RIGHT_FRAME
 
 #ifdef RIGHT_FRAME
     for (int y = B_R; y < height - B_R; y++) {
-        costs.assign(width*maxdisp, std::numeric_limits<float>::max());
+        costs.assign(width * maxdisp, std::numeric_limits<float>::max());
         for (int x = B_R; x < width - B_R; x++) {
             auto ul = std::min(width - B_R, x + maxdisp);
             for (int d = x; d < ul; d++) {
                 float cost = 0;
                 for (int i = -B_R; i <= B_R; i++) {
                     for (int j = -B_R; j <= B_R; j++) {
-                        auto pl = edgeLeft[(y + i)*width + (d + j)];
-                        auto pr = edgeRight[(y + i)*width + (x + j)];
+                        auto pl = edgeLeft[(y + i) * width + (d + j)];
+                        auto pr = edgeRight[(y + i) * width + (x + j)];
 
                         cost += sqr((float)(pl - pr));
                     }
                 }
-                costs[x*maxdisp + (d - x)] = cost;
+                costs[x * maxdisp + (d - x)] = cost;
             }
         }
         for (int x = B_R; x < width - B_R; x++) {
@@ -92,8 +95,8 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
             auto minRIdx = 0;
             auto minLVal = std::numeric_limits<float>::max();
             auto minLIdx = 0;
-            for (int d = 0; d < maxdisp; d++){
-                auto cost = costs[x*maxdisp + d];
+            for (int d = 0; d < maxdisp; d++) {
+                auto cost = costs[x * maxdisp + d];
                 if (cost < minRVal) {
                     minRVal = cost;
                     minRIdx = d;
@@ -103,14 +106,14 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
             auto xu = std::min(width - 1, xl + maxdisp);
             for (int xd = xl; xd < xu; xd++) {
                 auto d = x - xd + minRIdx;
-                auto cost = costs[xd*maxdisp + d];
+                auto cost = costs[xd * maxdisp + d];
                 if (cost < minLVal) {
                     minLVal = cost;
                     minLIdx = d;
                 }
             }
 
-            dptr[y*width + x] = abs(minLIdx - minRIdx) < LRT ? minRIdx * muldisp : 0;
+            dptr[y * width + x] = abs(minLIdx - minRIdx) < LRT ? minRIdx * muldisp : 0;
         }
     }
 #else
@@ -119,13 +122,13 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
     auto halfy = (height - 1.0f) / 2.0f;
 
     for (int y = B_R; y < height - B_R; y++) {
-        costs.assign(width*maxdisp, std::numeric_limits<float>::max());
+        costs.assign(width * maxdisp, std::numeric_limits<float>::max());
         for (int x = B_R; x < width - B_R; x++) {
             auto lb = std::max(B_R, x - maxdisp);
             auto search_limit = x - lb;
             for (int d = 0; d < search_limit; d++) {
                 auto xf = (x - halfx) / halfx;
-                auto df = (x - d - halfx) / halfx; 
+                auto df = (x - d - halfx) / halfx;
                 auto yf = (y - halfy) / halfy;
 
                 float cost = 0;
@@ -133,13 +136,13 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
 
                 for (int i = -B_R; i <= B_R; i++) {
                     for (int j = -B_R; j <= B_R; j++) {
-                        auto pl = edgeLeft[(y + i)*width + (x + j)];
-                        auto pr = edgeRight[(y + i)*width + (x + j - d)];
+                        auto pl = edgeLeft[(y + i) * width + (x + j)];
+                        auto pr = edgeRight[(y + i) * width + (x + j - d)];
                         n++;
                         cost += sqr(pl - pr);
                     }
                 }
-                costs[x*maxdisp + d] = cost/n;
+                costs[x * maxdisp + d] = cost / n;
             }
         }
         for (int x = B_R; x < width - B_R; x++) {
@@ -147,8 +150,8 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
             auto minRIdx = 0;
             auto minLVal = std::numeric_limits<float>::max();
             auto minLIdx = 0;
-            for (int d = 0; d < maxdisp; d++){
-                auto cost = costs[x*maxdisp + d];
+            for (int d = 0; d < maxdisp; d++) {
+                auto cost = costs[x * maxdisp + d];
                 if (cost < minLVal) {
                     minLVal = cost;
                     minLIdx = d;
@@ -158,21 +161,20 @@ void BMatch::match(img::Img<uint8_t> & left, img::Img<uint8_t> & right, img::Img
             auto xu = std::min(width - 1, xl + maxdisp);
             for (int xd = xl; xd < xu; xd++) {
                 auto d = xd - x + minLIdx;
-                auto cost = costs[xd*maxdisp + d];
+                auto cost = costs[xd * maxdisp + d];
                 if (cost < minRVal) {
                     minRVal = cost;
                     minRIdx = d;
                 }
             }
 
-            auto sp = (minLIdx > 0 && minLIdx < maxdisp - 1) ?
-                subpixel(costs[x*maxdisp + std::max(minLIdx - 1, 0)],
-                costs[x*maxdisp + minLIdx],
-                costs[x*maxdisp + std::min(minLIdx + 1, maxdisp - 1)]) : 0;
-            uint16_t res = std::round((minLIdx + sp)* muldisp);
-            dptr[y*width + x] = abs(minLIdx - minRIdx) < LRT ? res : 0;
+            auto sp = (minLIdx > 0 && minLIdx < maxdisp - 1) ? subpixel(costs[x * maxdisp + std::max(minLIdx - 1, 0)],
+                                                                   costs[x * maxdisp + minLIdx],
+                                                                   costs[x * maxdisp + std::min(minLIdx + 1, maxdisp - 1)])
+                                                             : 0;
+            uint16_t res = std::round((minLIdx + sp) * muldisp);
+            dptr[y * width + x] = abs(minLIdx - minRIdx) < LRT ? res : 0;
         }
     }
 #endif
-
 }
