@@ -32,4 +32,4 @@ As such, the code has basically no comments and poor interfaces for most of it's
 * There is a selectable subpixel multiplier for the disparity image, and a full 16-bit disparity image is computed at whatever scaling is desired. Change `src\Main.cpp` if you want to change algorithms, subpixel multipliers, or disparity search range. Individual algorithm configurations are currently done as C-style macros at the top of each algorithm's cpp file. 
 
 ## License
-Mozilla Public License 2.0
+Mozilla Public License 2.0. More information is available on the [Wikpedia article on MPL](https://en.wikipedia.org/wiki/Mozilla_Public_License) or [MPL's official FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/). 
