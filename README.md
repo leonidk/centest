@@ -19,6 +19,7 @@ As such, the code has basically no comments and poor interfaces for most of it's
 * CensusMatching is the primary project of interest
 * GLFW3 is installed via a NuGet Package, so Visual Studio should pull it down automatically. 
 * Run with centest \<left image> \<right image>
+
 ### Linux
 * Pull down a version of this repository.
 * I'm using the amazingly convenient [Generic Makefile](https://github.com/mbcrawfo/GenericMakefile).
