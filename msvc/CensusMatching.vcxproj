@@ -146,29 +146,29 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\bmMatch.h" />
-    <ClInclude Include="src\cMatch.h" />
-    <ClInclude Include="src\geometric.h" />
-    <ClInclude Include="src\image.h" />
-    <ClInclude Include="src\image_filter.h" />
-    <ClInclude Include="src\imio.h" />
-    <ClInclude Include="src\imshow.h" />
-    <ClInclude Include="src\r200Match.h" />
-    <ClInclude Include="src\sgbmMatch.h" />
-    <ClInclude Include="src\stb_image.h" />
-    <ClInclude Include="src\stb_image_write.h" />
-    <ClInclude Include="src\stereo.h" />
-    <ClInclude Include="src\vecmatquat.h" />
-    <ClInclude Include="src\vecmatquat_minimal.h" />
+    <ClInclude Include="..\src\bmMatch.h" />
+    <ClInclude Include="..\src\cMatch.h" />
+    <ClInclude Include="..\src\geometric.h" />
+    <ClInclude Include="..\src\image.h" />
+    <ClInclude Include="..\src\image_filter.h" />
+    <ClInclude Include="..\src\imio.h" />
+    <ClInclude Include="..\src\imshow.h" />
+    <ClInclude Include="..\src\r200Match.h" />
+    <ClInclude Include="..\src\sgbmMatch.h" />
+    <ClInclude Include="..\src\stb_image.h" />
+    <ClInclude Include="..\src\stb_image_write.h" />
+    <ClInclude Include="..\src\stereo.h" />
+    <ClInclude Include="..\src\vecmatquat.h" />
+    <ClInclude Include="..\src\vecmatquat_minimal.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\bmMatch.cpp" />
-    <ClCompile Include="src\imio.cpp" />
-    <ClCompile Include="src\imshow.cpp" />
-    <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\cMatch.cpp" />
-    <ClCompile Include="src\r200Match.cpp" />
-    <ClCompile Include="src\sgbmMatch.cpp" />
+    <ClCompile Include="..\src\bmMatch.cpp" />
+    <ClCompile Include="..\src\imio.cpp" />
+    <ClCompile Include="..\src\imshow.cpp" />
+    <ClCompile Include="..\src\Main.cpp" />
+    <ClCompile Include="..\src\cMatch.cpp" />
+    <ClCompile Include="..\src\r200Match.cpp" />
+    <ClCompile Include="..\src\sgbmMatch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
