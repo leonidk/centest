@@ -159,6 +159,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     float bilateralWeights[B_W * B_W];
 
     for (int y = B_R; y < height - B_R; y++) {
+        auto prevVal = 0;
         costs.assign(width * maxdisp, MAXCOST);
         if (USE_BLF) {
             for (int x = B_R; x < width - B_R; x++) {
@@ -471,13 +472,11 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
                     me -= MM;
             }
             res = (me - minLVal > MT) ? res : 0;
-            if (MOVE_LEFT && res == 0) {
-                for (int xc = x - 1; xc >= 0; xc--) {
-                    if (dptr[y * width + xc] != 0) {
-                        res = dptr[y * width + xc];
-                        break;
-                    }
-                }
+
+            // hole filling
+            if (MOVE_LEFT) {
+                prevVal = res ? res : prevVal;
+                res = res ? res : prevVal;
             }
             // final set
             dptr[y * width + x] = res;

@@ -39,6 +39,10 @@ using namespace stereo;
 #define MM (5)
 #define MT (192)
 
+//optional hole filling for 100% density
+// not on r200
+#define HOLE_FILL 0
+
 // sampling pattern
 // . X . X . X .
 // X . X . X . X
@@ -129,6 +133,7 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     img::Img<uint16_t> costI(maxdisp, width, (uint16_t*)costs.data());
 
     for (int y = B_R; y < height - B_R; y++) {
+        auto prevVal = 0;
         costs.assign(width * maxdisp, std::numeric_limits<uint16_t>::max());
         for (int x = B_R; x < width - B_R; x++) {
             auto lb = std::max(B_R, x - maxdisp);
@@ -231,6 +236,12 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
                     me -= MM;
             }
             res = (me - minLVal > MT) ? res : 0;
+
+            // hole filling
+            if (HOLE_FILL) {
+                prevVal = res ? res : prevVal;
+                res = res ? res : prevVal;
+            }
 
             // final set
             dptr[y * width + x] = res;
