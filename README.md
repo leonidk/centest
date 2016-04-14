@@ -18,14 +18,16 @@ As such, the code has basically no comments and poor interfaces for most of it's
 * A Visual Studio 2013 Solution is included in msvc/
 * CensusMatching is the primary project of interest
 * GLFW3 is installed via a NuGet Package, so Visual Studio should pull it down automatically. 
-* Run with centest \<left image> \<right image>
+* Run with `centest <left image> <right image>`
+* An example would be `centest.exe cones\im2.png cones\im6.png`
 
 ### Linux
 * Pull down a version of this repository.
 * I'm using the amazingly convenient [Generic Makefile](https://github.com/mbcrawfo/GenericMakefile).
 * It has all the dependencies specified through pkg-config, see line 11 of the Makefile (gl & glfw3) 
-* Type _make_ in the top-level-centest. _make debug_ also works. This'll build everything and make a symlink to ./centest.
-* Run via ./centest \<left image> \<right image>
+* Type `make` in the top-level-centest. `make debug` also works. This'll build everything and make a symlink to ./centest.
+* Run via `./centest <left image> <right image>`
+* An example would be `./centest cones/im2.png cones/im6.png`
 
 ## License
 Mozilla Public License 2.0
