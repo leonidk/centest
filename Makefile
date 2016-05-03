@@ -8,7 +8,7 @@ SRC_EXT = cpp
 # Path to the source directory, relative to the makefile
 SRC_PATH = ./src
 # Space-separated pkg-config libraries used by this project
-LIBS = gl glfw3
+LIBS = 
 # General compiler flags
 COMPILE_FLAGS = -std=c++11  
 #COMPILE_FLAGS = -std=c++11 -g -w  
