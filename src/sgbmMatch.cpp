@@ -159,9 +159,11 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     float bilateralWeights[B_W * B_W];
 
     for (int y = B_R; y < height - B_R; y++) {
+        printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
         auto prevVal = 0;
         costs.assign(width * maxdisp, MAXCOST);
         if (USE_BLF) {
+             #pragma omp parallel for
             for (int x = B_R; x < width - B_R; x++) {
                 auto lb = std::max(B_R, x - maxdisp);
                 auto search_limit = x - lb;
@@ -194,6 +196,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
                 }
             }
         } else {
+             #pragma omp parallel for
             for (int x = B_R; x < width - B_R; x++) {
                 auto lb = std::max(B_R, x - maxdisp);
                 auto search_limit = x - lb;

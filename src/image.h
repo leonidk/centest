@@ -60,6 +60,12 @@ struct Image {
         auto sample = tl * (1.f - dx) * (1.f - dy) + tr * dx * (1.f - dy) + bl * (1.f - dx) * dy + br * dx * dy;
         return (T)sample;
     }
+    img::Image<T, C> copy()
+    {
+        img::Image<T, C> res(width, height);
+        memcpy(res.data.get(), this->data.get(), width*height*sizeof(T)*C);
+        return res;
+    }
 };
 
 template <typename T>

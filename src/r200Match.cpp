@@ -41,7 +41,7 @@ using namespace stereo;
 
 //optional hole filling for 100% density
 // not on r200
-#define HOLE_FILL 0
+#define HOLE_FILL 1
 
 // sampling pattern
 // . X . X . X .
@@ -133,8 +133,10 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     img::Img<uint16_t> costI(maxdisp, width, (uint16_t*)costs.data());
 
     for (int y = B_R; y < height - B_R; y++) {
+        printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
         auto prevVal = 0;
         costs.assign(width * maxdisp, std::numeric_limits<uint16_t>::max());
+         #pragma omp parallel for
         for (int x = B_R; x < width - B_R; x++) {
             auto lb = std::max(B_R, x - maxdisp);
             auto search_limit = x - lb;

@@ -143,6 +143,7 @@
     <ClCompile>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
