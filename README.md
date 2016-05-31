@@ -10,21 +10,24 @@ As such, the code has basically no comments and poor interfaces for most of it's
 
 ## Dependencies
 * C++11 compliant compiler
-* GLFW3 (not used in any code path as of April 2016)
 
 ## Building
 ### Windows
 * Pull down a version of this repository
 * A Visual Studio 2013 Solution is included in msvc/
 * CensusMatching is the primary project of interest
-* GLFW3 is installed via a NuGet Package, so Visual Studio should pull it down automatically. 
+* GLFW3 is installed via a NuGet Package, so Visual Studio should pull it down automatically 
 
 ### Linux
-* Pull down a version of this repository.
-* I'm using the amazingly convenient [Generic Makefile](https://github.com/mbcrawfo/GenericMakefile).
-* It has all the dependencies specified through pkg-config, see line 11 of the Makefile (gl & glfw3) 
-* Type _make_ in the top-level-centest. _make debug_ also works. This'll build everything and make a symlink to ./centest.
-* Run via ./centest <left image> <right image>
+* Pull down a version of this repository
+* I'm using the amazingly convenient [Generic Makefile](https://github.com/mbcrawfo/GenericMakefile)
+* Type `make` in the top-level-centest. `make debug` also works. This'll build everything and make a symlink to ./centest.
+
+## Running
+* Run via `./centest <left image> <right image>`
+* An example would be `./centest cones/im2.png cones/im6.png`
+* Output results are in the current working directory, to an 8-bit disparity image PNG `disp-out.png`. 
+* There is a selectable subpixel multiplier for the disparity image, and a full 16-bit disparity image is computed at whatever scaling is desired. Change `src\Main.cpp` if you want to change algorithms, subpixel multipliers, or disparity search range. Individual algorithm configurations are currently done as C-style macros at the top of each algorithm's cpp file. 
 
 ## License
-Mozilla Public License 2.0
+Mozilla Public License 2.0. More information is available on the [Wikpedia article on MPL](https://en.wikipedia.org/wiki/Mozilla_Public_License) or [MPL's official FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/). 
