@@ -10,8 +10,6 @@
 #include <fstream>
 #include <chrono>
 
-const int resizeGT = 0;
-
 img::Img<float> loadDisparityMap(std::string filename)
 {
     std::ifstream file(filename, std::ios::binary);
@@ -35,17 +33,6 @@ img::Img<float> loadDisparityMap(std::string filename)
             rptr[y*width + x] = r2ptr[(height - 1 - y)*width + x];
         }
     }
-    if (resizeGT) {
-        width /= 4;
-        height /= 4;
-        res = img::Image<float, 1>(width, height);
-        rptr = res.data.get();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                rptr[y*width + x] = r2ptr[(height*4 - 1 - 4*y)*width*4 + x*4]/4.0f;
-            }
-        }
-    }
     return res;
 }
 
@@ -57,6 +44,8 @@ img::Img<float> loadDisparityMap(std::string filename)
 //  * im1.png
 //  * mask0nocc.png
 
+const int MAXDISP = 70;
+const int MULDISP = 4;
 int main(int argc, char* argv[])
 {
     if (argc < 2)
@@ -76,7 +65,7 @@ int main(int argc, char* argv[])
     
     auto left_g = img::Rgb2grey(left);
     auto right_g = img::Rgb2grey(right);
-    stereo::sgbmMatch cm(left.width, left.height, 70, 3);
+    stereo::sgbmMatch cm(left.width, left.height, MAXDISP, MULDISP);
 
     auto startTime = std::chrono::steady_clock::now();
     auto disp = cm.match(left_g, right_g);
@@ -90,7 +79,7 @@ int main(int argc, char* argv[])
     memset(optr, 0, disp.width * disp.height);
 
     for (int i = 0; i < ot.width * ot.height; i++) {
-        optr[i] = (uint8_t)std::round(dptr[i] * 254.0 / (70.0 * 3));
+        optr[i] = (uint8_t)std::round(dptr[i] * 254.0 / (static_cast<double>(cm.maxdisp * cm.muldisp)));
     }
     double mse = 0;
     double count = 0;
@@ -98,7 +87,7 @@ int main(int argc, char* argv[])
     if (gt.data.get() != nullptr) {
         auto gptr = gt.data.get();
         for (int i = 0; i < ot.width * ot.height; i++) {
-            double pred =  dptr[i]/3.0;
+            double pred =  dptr[i]/static_cast<double>(cm.muldisp);
             double corr = gptr[i];
             uint8_t msk = mptr[i];
 

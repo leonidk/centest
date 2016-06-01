@@ -23,7 +23,7 @@ public:
         return disp;
     }
 
-protected:
+public: // but please don't set!
     int width, height, maxdisp, muldisp;
 };
 }
