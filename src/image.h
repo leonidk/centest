@@ -13,10 +13,12 @@ template <typename T, int C>
 struct Image {
     std::shared_ptr<T> data;
     int width, height;
+    T * ptr;
     Image()
         : data(nullptr)
         , width(0)
         , height(0)
+        , ptr(nullptr)
     {
     }
     Image(int width, int height)
@@ -24,12 +26,14 @@ struct Image {
         , width(width)
         , height(height)
     {
+        ptr = data.get();
     }
     Image(int width, int height, T* d)
         : data(d, null_d())
         , width(width)
         , height(height)
     {
+        ptr = data.get();
     }
 
     struct null_d {

@@ -16,7 +16,7 @@ using namespace stereo;
 #define B_W (2 * B_R + 1)
 
 // Cost Multipliers
-#define C_M (10)
+#define C_M (3)
 #define A_M (1)
 
 // Left-Right Threshold
@@ -55,12 +55,12 @@ using namespace stereo;
 #define SCALE_P2 1
 
 //bilateral filter on the weights
-#define USE_BLF 1
+#define USE_BLF 0
 #define RANGESIGMA (5 * 5)
 #define SPACESIGMA ((B_R / 2.0f) * (B_R / 2.0f))
 
 // hole filling
-#define MOVE_LEFT 1
+#define MOVE_LEFT 0
 
 // sampling pattern
 // . X . X . X .

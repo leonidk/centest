@@ -6,9 +6,6 @@
     <ClCompile Include="..\src\imio.cpp">
       <Filter>libs</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\imshow.cpp">
-      <Filter>libs</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\bmMatch.cpp" />
     <ClCompile Include="..\src\r200Match.cpp" />
     <ClCompile Include="..\src\sgbmMatch.cpp" />

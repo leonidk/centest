@@ -49,24 +49,34 @@ img::Img<float> loadDisparityMap(std::string filename)
     return res;
 }
 
+// folder target
+// contains
+//  * calib.txt
+//  * disp0GT.pfm
+//  * im0.png
+//  * im1.png
+//  * mask0nocc.png
+
 int main(int argc, char* argv[])
 {
-    if (argc < 3)
+    if (argc < 2)
         return 1;
 
-    img::Img<float> gt;
-    if (argc >= 4)
-        gt = loadDisparityMap(argv[3]);
+    std::string filePath = std::string(argv[1]);
+    std::string leftFile = filePath + "im0.png";
+    std::string rightFile = filePath + "im1.png";
+    std::string gtFile = filePath + "disp0GT.pfm";
+    std::string maskFile = filePath + "mask0nocc.png";
+    std::string calibFile = filePath + "calib.txt";
 
-    std::string leftFile(argv[1]);
-    std::string rightFile(argv[2]);
-
-    auto left = img::imread<uint8_t, 3>(argv[1]);
-    auto right = img::imread<uint8_t, 3>(argv[2]);
-
+    auto left = img::imread<uint8_t, 3>(leftFile.c_str());
+    auto right = img::imread<uint8_t, 3>(rightFile.c_str());
+    auto mask = img::imread<uint8_t, 1>(maskFile.c_str());
+    auto gt = loadDisparityMap(gtFile.c_str());
+    
     auto left_g = img::Rgb2grey(left);
     auto right_g = img::Rgb2grey(right);
-    stereo::sgbmMatch cm(left.width, left.height, 270, 3);
+    stereo::sgbmMatch cm(left.width, left.height, 70, 3);
 
     auto startTime = std::chrono::steady_clock::now();
     auto disp = cm.match(left_g, right_g);
@@ -75,10 +85,12 @@ int main(int argc, char* argv[])
     auto ot = img::Image<uint8_t, 1>(disp.width, disp.height);
     auto dptr = disp.data.get();
     auto optr = ot.data.get();
+    auto mptr = mask.data.get();
+
     memset(optr, 0, disp.width * disp.height);
 
     for (int i = 0; i < ot.width * ot.height; i++) {
-        optr[i] = (uint8_t)std::round(dptr[i] * 254.0 / (270.0 * 3));
+        optr[i] = (uint8_t)std::round(dptr[i] * 254.0 / (70.0 * 3));
     }
     double mse = 0;
     double count = 0;
@@ -88,7 +100,9 @@ int main(int argc, char* argv[])
         for (int i = 0; i < ot.width * ot.height; i++) {
             double pred =  dptr[i]/3.0;
             double corr = gptr[i];
-            if (isfinite(corr)) {
+            uint8_t msk = mptr[i];
+
+            if (isfinite(corr) && msk == 255) {
                 mse += sqr(pred -corr);
                 count++;
             }
