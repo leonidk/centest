@@ -60,8 +60,10 @@ using namespace stereo;
 #define SPACESIGMA ((B_R / 2.0f) * (B_R / 2.0f))
 
 // hole filling
-#define MOVE_LEFT 1
+#define MOVE_LEFT 0
 
+const int output_log = 1;
+const std::string input_file("");
 // sampling pattern
 // . X . X . X .
 // X . X . X . X
@@ -99,8 +101,6 @@ const int samples[] = {
     3, 2
 };
 
-const int output_log = 0;
-const std::string input_file("rfc.txt");
 
 sgbmMatch::sgbmMatch(int w, int h, int d, int m)
     : StereoMatch(w, h, d, m)
