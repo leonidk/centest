@@ -41,7 +41,7 @@ using namespace stereo;
 
 //optional hole filling for 100% density
 // not on r200
-#define HOLE_FILL 1
+#define HOLE_FILL 0
 
 // sampling pattern
 // . X . X . X .

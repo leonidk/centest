@@ -36,7 +36,7 @@ using namespace stereo;
 
 // Score Limits
 #define SMIN (1)
-#define SMAX (200 * 384)
+#define SMAX (20000)
 
 // Median
 #define MP (10)
@@ -47,7 +47,7 @@ using namespace stereo;
 #define P1 (2000)
 #define P2 (4 * P1)
 
-#define MAXCOST (0x00ffffff)
+#define MAXCOST (SMAX) //(0x00ffffff)
 #define USE_SGM 1
 
 // scale SGM P2 as P2 = P2/grad.
@@ -99,6 +99,8 @@ const int samples[] = {
     3, 2
 };
 
+const int output_log = 1;
+
 sgbmMatch::sgbmMatch(int w, int h, int d, int m)
     : StereoMatch(w, h, d, m)
     , costs(w * d)
@@ -142,15 +144,21 @@ static float subpixel(float costLeft, float costMiddle, float costRight)
 
 void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Img<uint16_t>& disp)
 {
+    img::Img<float> gt;
+    this->match(left, right, gt, disp);
+}
+void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Img<float> & gt, img::Img<uint16_t>& disp)
+{
     auto lptr = left.data.get();
     auto rptr = right.data.get();
     auto dptr = disp.data.get();
+    auto gptr = gt.data.get();
 
     censusTransform(lptr, censusLeft.data(), width, height);
     censusTransform(rptr, censusRight.data(), width, height);
     img::Img<uint32_t> lc(left.width, left.height, (uint32_t*)censusLeft.data());
     img::Img<uint32_t> rc(left.width, left.height, (uint32_t*)censusRight.data());
-    img::Img<uint16_t> costI(maxdisp, width, (uint16_t*)costs.data());
+    img::Img<uint32_t> costI(maxdisp, width, (uint32_t*)costs.data());
     costsSummed.assign(width * maxdisp, MAXCOST);
 
     std::vector<int32_t> topCosts(width * maxdisp, MAXCOST);

@@ -65,10 +65,18 @@ int main(int argc, char* argv[])
     
     auto left_g = img::Rgb2grey(left);
     auto right_g = img::Rgb2grey(right);
+    img::Img<uint16_t> disp(left.width, left.height);
+    memset(disp.data.get(), 0, left.width * left.height * sizeof(uint16_t));
     stereo::sgbmMatch cm(left.width, left.height, MAXDISP, MULDISP);
 
+
+    //for debug
+    for (int i = 0; i < gt.width * gt.height; i++) {
+        gt.ptr[i] = (mask.ptr[i] != 255) ? INFINITY : gt.ptr[i];
+    }
+
     auto startTime = std::chrono::steady_clock::now();
-    auto disp = cm.match(left_g, right_g);
+    cm.match(left_g, right_g,gt,disp);
     auto endTime = std::chrono::steady_clock::now();;
 
     auto ot = img::Image<uint8_t, 1>(disp.width, disp.height);
@@ -84,19 +92,19 @@ int main(int argc, char* argv[])
     double mse = 0;
     double count = 0;
     auto sqr = [](double a) { return a * a; };
-    if (gt.data.get() != nullptr) {
-        auto gptr = gt.data.get();
-        for (int i = 0; i < ot.width * ot.height; i++) {
-            double pred =  dptr[i]/static_cast<double>(cm.muldisp);
-            double corr = gptr[i];
-            uint8_t msk = mptr[i];
+    auto gptr = gt.data.get();
 
-            if (isfinite(corr) && msk == 255) {
-                mse += sqr(pred -corr);
-                count++;
-            }
+    for (int i = 0; i < ot.width * ot.height; i++) {
+        double pred = dptr[i] / static_cast<double>(cm.muldisp);
+        double corr = gptr[i];
+        uint8_t msk = mptr[i];
+
+        if (isfinite(corr) && msk == 255) {
+            mse += sqr(pred - corr);
+            count++;
         }
     }
+    
     img::imwrite("disp-out.png", ot);
     printf("\n\n %d seconds\n", std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count());
     printf("\n\n %lf average error\n", sqrt(mse / count));

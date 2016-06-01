@@ -21,7 +21,7 @@ Image<T, C> imread(const char* name)
     Image<T, C> returnImage = {};
     int channels;
     returnImage.data = std::shared_ptr<T>((T*)stbi_load(name, &returnImage.width, &returnImage.height, &channels, C));
-
+    returnImage.ptr = returnImage.data.get();
     return returnImage;
 }
 
