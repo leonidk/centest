@@ -1,7 +1,7 @@
 #include "sgbmMatch.h"
 #include <algorithm>
 #include <limits>
-
+#include <fstream>
 using namespace stereo;
 
 // Using the parameters from
@@ -60,7 +60,7 @@ using namespace stereo;
 #define SPACESIGMA ((B_R / 2.0f) * (B_R / 2.0f))
 
 // hole filling
-#define MOVE_LEFT 0
+#define MOVE_LEFT 1
 
 // sampling pattern
 // . X . X . X .
@@ -99,7 +99,8 @@ const int samples[] = {
     3, 2
 };
 
-const int output_log = 1;
+const int output_log = 0;
+const std::string input_file("rfc.txt");
 
 sgbmMatch::sgbmMatch(int w, int h, int d, int m)
     : StereoMatch(w, h, d, m)
@@ -166,6 +167,12 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     std::vector<int32_t> topRightCosts(width * maxdisp, MAXCOST);
     float bilateralWeights[B_W * B_W];
 
+    std::ofstream gtOut; if (output_log) gtOut = std::ofstream("gt.csv");
+    std::ofstream sgbmOut; if (output_log) sgbmOut = std::ofstream("sgbm.csv");
+    std::ofstream rawOut; if (output_log) rawOut = std::ofstream("raw.csv");
+
+    std::ifstream predIn; if (input_file.size()) predIn = std::ifstream(input_file);
+    
     for (int y = B_R; y < height - B_R; y++) {
         printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
         auto prevVal = 0;
@@ -433,6 +440,24 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
 
             // disparity computation
             uint16_t res = (uint16_t)std::round((minLIdx + spL) * muldisp);
+            if (input_file.size()) {
+                auto correct = gt.ptr[y*width + x];
+                if (isfinite(correct)) {
+                    float predDisp;
+                    predIn >> predDisp;
+                    int intDisp = (int)predDisp;
+                    res = (uint16_t)(muldisp*predDisp);
+                }
+                else {
+                    res = 0;
+                }
+            }
+            else {
+                auto correct = gt.ptr[y*width + x];
+                if (!isfinite(correct)) {
+                    res = 0;
+                }
+            }
 
             // left-right threshold
             res = abs(minLIdx - minRIdx) < LRT && abs(spR - spL) < LRS ? res : 0;
@@ -491,6 +516,25 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             }
             // final set
             dptr[y * width + x] = res;
+
+            if (output_log) {
+                if (isfinite(gt.ptr[y*width + x])) {
+                    auto gtInt = (int)std::round(gt.ptr[y*width + x]);
+                    gtOut << gtInt << '\n';
+                    for (int i = 0; i < this->maxdisp; i++) {
+                        rawOut << costs[x*maxdisp + i];
+                        if (i != maxdisp - 1)
+                            rawOut << ',';
+                    }
+                    rawOut << '\n';
+                    for (int i = 0; i < this->maxdisp; i++) {
+                        sgbmOut << costsSummed[x*maxdisp + i];
+                        if (i != maxdisp - 1)
+                            sgbmOut << ',';
+                    }
+                    sgbmOut << '\n';
+                }
+            }
         }
     }
 }
