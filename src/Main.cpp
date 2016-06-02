@@ -9,7 +9,7 @@
 #include <string>
 #include <fstream>
 #include <chrono>
-
+#include <cmath>
 img::Img<float> loadDisparityMap(std::string filename)
 {
     std::ifstream file(filename, std::ios::binary);
@@ -99,14 +99,14 @@ int main(int argc, char* argv[])
         double corr = gptr[i];
         uint8_t msk = mptr[i];
 
-        if (isfinite(corr) && msk == 255) {
+        if (std::isfinite(corr) && msk == 255) {
             mse += sqr(pred - corr);
             count++;
         }
     }
     
     img::imwrite("disp-out.png", ot);
-    printf("\n\n %d seconds\n", std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count());
+    printf("\n\n %ld seconds\n", std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count());
     printf("\n\n %lf average error\n", sqrt(mse / count));
 
     return 0;

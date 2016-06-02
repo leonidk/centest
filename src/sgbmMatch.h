@@ -10,7 +10,7 @@ public:
     sgbmMatch(int w, int h, int d, int m);
     virtual void match(img::Img<uint8_t>& left, img::Img<uint8_t>& right,
         img::Img<uint16_t>& disp) override;
-    void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Img<float> & gt, img::Img<uint16_t>& disp);
+    void match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Img<float> & gt, img::Img<uint16_t>& disp);
 
 private:
     std::vector<uint32_t> censusLeft, censusRight;

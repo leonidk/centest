@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <cstring>
 static float clamp_f(float min, float max, float x)
 {
     return std::max(min, std::min(max, x));

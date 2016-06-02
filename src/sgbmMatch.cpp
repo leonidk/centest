@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <limits>
 #include <fstream>
+#include <cmath>
 using namespace stereo;
 
 // Using the parameters from
@@ -63,7 +64,7 @@ using namespace stereo;
 #define MOVE_LEFT 0
 
 const int output_log = 1;
-const std::string input_file("");
+const std::string input_file("1dcnn-nin-piano.txt");
 // sampling pattern
 // . X . X . X .
 // X . X . X . X
@@ -442,7 +443,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             uint16_t res = (uint16_t)std::round((minLIdx + spL) * muldisp);
             if (input_file.size()) {
                 auto correct = gt.ptr[y*width + x];
-                if (isfinite(correct)) {
+                if (std::isfinite(correct)) {
                     float predDisp;
                     predIn >> predDisp;
                     int intDisp = (int)predDisp;
@@ -454,7 +455,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             }
             else {
                 auto correct = gt.ptr[y*width + x];
-                if (!isfinite(correct)) {
+                if (!std::isfinite(correct)) {
                     res = 0;
                 }
             }
@@ -518,7 +519,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             dptr[y * width + x] = res;
 
             if (output_log) {
-                if (isfinite(gt.ptr[y*width + x])) {
+                if (std::isfinite(gt.ptr[y*width + x])) {
                     auto gtInt = (int)std::round(gt.ptr[y*width + x]);
                     gtOut << gtInt << '\n';
                     for (int i = 0; i < this->maxdisp; i++) {
