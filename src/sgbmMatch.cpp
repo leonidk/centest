@@ -443,7 +443,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             uint16_t res = (uint16_t)std::round((minLIdx + spL) * muldisp);
             if (input_file.size()) {
                 auto correct = gt.ptr[y*width + x];
-                if (std::isfinite(correct)) {
+                if (correct <= maxdisp) {
                     float predDisp;
                     predIn >> predDisp;
                     int intDisp = (int)predDisp;
@@ -455,7 +455,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             }
             else {
                 auto correct = gt.ptr[y*width + x];
-                if (!std::isfinite(correct)) {
+                if (correct > maxdisp) {
                     res = 0;
                 }
             }

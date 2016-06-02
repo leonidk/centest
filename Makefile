@@ -13,7 +13,7 @@ LIBS =
 COMPILE_FLAGS = -std=c++11  
 #COMPILE_FLAGS = -std=c++11 -g -w  
 # Additional release-specific flags
-RCOMPILE_FLAGS = -D NDEBUG -march=native -Ofast
+RCOMPILE_FLAGS = -D NDEBUG -march=native -Ofast 
 # Additional debug-specific flags
 DCOMPILE_FLAGS = -D DEBUG -g
 # Add additional include paths
