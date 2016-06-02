@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 
     //for debug
     for (int i = 0; i < gt.width * gt.height; i++) {
-        gt.ptr[i] = (mask.ptr[i] != 255) ? INFINITY : gt.ptr[i];
+        gt.ptr[i] = (mask.ptr[i] != 255) ? std::numeric_limits<float>::infinity() : gt.ptr[i];
     }
 
     auto startTime = std::chrono::steady_clock::now();

@@ -64,7 +64,7 @@ using namespace stereo;
 #define MOVE_LEFT 0
 
 const int output_log = 1;
-const std::string input_file("1dcnn-nin-piano.txt");
+const std::string input_file("1dcnn-nin-moto.txt");
 // sampling pattern
 // . X . X . X .
 // X . X . X . X
