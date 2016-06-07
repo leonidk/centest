@@ -521,7 +521,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             dptr[y * width + x] = res;
 #if LOG_1D
             if (output_log) {
-                if (std::isfinite(gt.ptr[y*width + x])) {
+                if (gt.ptr[y*width + x] <= maxdisp) {
                     auto gtInt = (int)std::round(gt.ptr[y*width + x]);
                     gtOut << gtInt << '\n';
                     for (int i = 0; i < this->maxdisp; i++) {

@@ -10,8 +10,8 @@ import os, sys
 from sklearn.metrics import accuracy_score
 
 # load data
-f = 'moto/'
-model_name = 'moto_piano_model'
+f = 'teddy/'
+model_name = 'moto_piano_pipes'
 if len(sys.argv) > 2:
     f = sys.argv[1]
     model_name = sys.argv[2]

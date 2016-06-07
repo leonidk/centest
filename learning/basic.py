@@ -3,9 +3,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 
 # load data
-f1 = 'piano/'
-f2 = 'moto/'
-folders =  ['moto/','piano/']
+folders =  ['moto/','piano/','pipes/']
 gt = []
 sgbm = []
 raw = []
@@ -43,24 +41,6 @@ print 'sgbm accuracy ', accuracy_score(test_gt,naive_sgbm)
 from sklearn.linear_model import SGDClassifier, LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
-#clf = SGDClassifier(n_jobs=-1)
-#clf.fit(train_raw,train_gt)
-#pred = clf.predict(test_raw)
-#print 'linearsvm accuracy ', accuracy_score(test_gt,pred)
-
-#clf = LogisticRegression(n_jobs=-1)
-#clf.fit(train_raw,train_gt)
-#pred = clf.predict(test_raw)
-#print 'logistic accuracy ', accuracy_score(test_gt,pred)
-
-#clf = RandomForestClassifier(min_samples_leaf=20,n_jobs=-1)
-#clf.fit(train_raw,train_gt)
-#pred = clf.predict(test_raw)
-#print 'rfc accuracy ', accuracy_score(test_gt,pred)
-#pred = clf.predict(raw_orig)
-#with open('rfc.txt','w') as otf:
-#    for p in pred:
-#        otf.write(str(int(p)) + '\n')
 from keras.utils.np_utils import to_categorical
 
 one_hot_train = to_categorical(train_gt,disp_dim)
@@ -85,14 +65,20 @@ model.add(Flatten())
 model.add(Dense(disp_dim))
 model.add(Activation('softmax'))
 model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.0001),metrics=['accuracy'])
-X = -train_raw + train_raw.mean()
+
+X = -train_raw + 3000
 X = X.reshape((-1,70,1))
 model.fit(X,one_hot_train,nb_epoch=10,batch_size=128,verbose=2)
-X = -test_raw + test_raw.mean()
+X = -test_raw + 3000
 X = X.reshape((-1,70,1))
 pred = model.predict_classes(X,128)
 print '2lyer nn accuracy ', accuracy_score(test_gt,pred)
-X = -raw_orig + train_raw.mean()
+
+json_string = model.to_json()
+open('newest_model.json', 'w').write(json_string)
+model.save_weights('newest_model.h5')
+
+X = -raw_orig + 3000
 X = X.reshape((-1,70,1))
 pred = model.predict_classes(X,128)
 with open('1dcnn-nin.txt','w') as otf:
