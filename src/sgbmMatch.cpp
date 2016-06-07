@@ -49,20 +49,21 @@ using namespace stereo;
 #define P2 (4 * P1)
 
 #define MAXCOST (SMAX) //(0x00ffffff)
-#define USE_SGM 1
+#define USE_SGM (1)
 
 // scale SGM P2 as P2 = P2/grad.
 // should make propogation stop at edges
-#define SCALE_P2 1
+#define SCALE_P2 (1)
 
 //bilateral filter on the weights
-#define USE_BLF 0
+#define USE_BLF (0)
 #define RANGESIGMA (5 * 5)
 #define SPACESIGMA ((B_R / 2.0f) * (B_R / 2.0f))
 
 // hole filling
-#define MOVE_LEFT 0
+#define MOVE_LEFT (0)
 
+#define LOG_1D (1)
 const int output_log = 1;
 const std::string input_file("");
 // sampling pattern
@@ -171,6 +172,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     std::ofstream gtOut; if (output_log) gtOut = std::ofstream("gt.csv");
     std::ofstream sgbmOut; if (output_log) sgbmOut = std::ofstream("sgbm.csv");
     std::ofstream rawOut; if (output_log) rawOut = std::ofstream("raw.csv");
+    std::ofstream diffOut; if (output_log) diffOut = std::ofstream("diff.csv");
 
     std::ifstream predIn; if (input_file.size()) predIn = std::ifstream(input_file);
     
@@ -517,7 +519,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             }
             // final set
             dptr[y * width + x] = res;
-
+#if LOG_1D
             if (output_log) {
                 if (std::isfinite(gt.ptr[y*width + x])) {
                     auto gtInt = (int)std::round(gt.ptr[y*width + x]);
@@ -536,6 +538,43 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
                     sgbmOut << '\n';
                 }
             }
+#endif
         }
+#if !LOG_1D
+        if (output_log) {
+            for (int x = B_R; x < width - B_R; x++) {
+                //ground truth out
+                auto gtInt = (int)std::round(gt.ptr[y*width + x]);
+                gtInt = gtInt > maxdisp ? -1 : gtInt;
+                gtOut << gtInt;
+                if (x != width - B_R - 1)
+                    gtOut << ',';
+
+                //pixel value
+                auto pxVal = left.ptr[y*width + x];
+                diffOut << pxVal;
+                if (x != width - B_R - 1)
+                    diffOut << ',';
+
+                //raw out
+                for (int i = 0; i < this->maxdisp; i++) {
+                    rawOut << costs[x*maxdisp + i];
+                    if (i != maxdisp - 1 || x != width - B_R - 1)
+                        rawOut << ',';
+                }
+
+                //sgbm out
+                for (int i = 0; i < this->maxdisp; i++) {
+                    sgbmOut << costsSummed[x*maxdisp + i];
+                    if (i != maxdisp - 1 || x != width - B_R - 1)
+                        sgbmOut << ',';
+                }
+            }
+            diffOut << '\n';
+            gtOut << '\n';
+            rawOut << '\n';
+            sgbmOut << '\n';
+        }
+#endif
     }
 }

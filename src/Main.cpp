@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     if (argc < 2)
         return 1;
 
-    std::string filePath = std::string(argv[1]);
+    std::string filePath = std::string(argv[1]) + '/';
     std::string leftFile = filePath + "im0.png";
     std::string rightFile = filePath + "im1.png";
     std::string gtFile = filePath + "disp0GT.pfm";
