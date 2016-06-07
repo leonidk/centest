@@ -1,0 +1,6 @@
+raw accuracy  0.703764520427
+sgbm accuracy  0.743595999024
+rfc accuracy  0.839698237844
+
+1d CNN: 0.7639
+1d CNN NIN: 0.904948674161
