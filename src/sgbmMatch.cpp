@@ -64,7 +64,7 @@ using namespace stereo;
 #define MOVE_LEFT (0)
 
 #define LOG_1D (1)
-const int output_log = 1;
+const int output_log = 0;
 const std::string input_file("");
 // sampling pattern
 // . X . X . X .
@@ -177,7 +177,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     std::ifstream predIn; if (input_file.size()) predIn = std::ifstream(input_file);
     
     for (int y = B_R; y < height - B_R; y++) {
-        printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
+        //printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
         auto prevVal = 0;
         costs.assign(width * maxdisp, MAXCOST);
         if (USE_BLF) {
@@ -443,24 +443,24 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
 
             // disparity computation
             uint16_t res = (uint16_t)std::round((minLIdx + spL) * muldisp);
-            if (input_file.size()) {
-                auto correct = gt.ptr[y*width + x];
-                if (correct <= maxdisp) {
-                    float predDisp;
-                    predIn >> predDisp;
-                    int intDisp = (int)predDisp;
-                    res = (uint16_t)(muldisp*predDisp);
-                }
-                else {
-                    res = 0;
-                }
-            }
-            else {
-                auto correct = gt.ptr[y*width + x];
-                if (correct > maxdisp) {
-                    res = 0;
-                }
-            }
+            //if (input_file.size()) {
+            //    auto correct = gt.ptr[y*width + x];
+            //    if (correct <= maxdisp) {
+            //        float predDisp;
+            //        predIn >> predDisp;
+            //        int intDisp = (int)predDisp;
+            //        res = (uint16_t)(muldisp*predDisp);
+            //    }
+            //    else {
+            //        res = 0;
+            //    }
+            //}
+            //else {
+            //    auto correct = gt.ptr[y*width + x];
+            //    if (correct > maxdisp) {
+            //        res = 0;
+            //    }
+            //}
 
             // left-right threshold
             res = abs(minLIdx - minRIdx) < LRT && abs(spR - spL) < LRS ? res : 0;
@@ -519,62 +519,62 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             }
             // final set
             dptr[y * width + x] = res;
-#if LOG_1D
-            if (output_log) {
-                if (gt.ptr[y*width + x] <= maxdisp) {
-                    auto gtInt = (int)std::round(gt.ptr[y*width + x]);
-                    gtOut << gtInt << '\n';
-                    for (int i = 0; i < this->maxdisp; i++) {
-                        rawOut << costs[x*maxdisp + i];
-                        if (i != maxdisp - 1)
-                            rawOut << ',';
-                    }
-                    rawOut << '\n';
-                    for (int i = 0; i < this->maxdisp; i++) {
-                        sgbmOut << costsSummed[x*maxdisp + i];
-                        if (i != maxdisp - 1)
-                            sgbmOut << ',';
-                    }
-                    sgbmOut << '\n';
-                }
-            }
-#endif
+//#if LOG_1D
+//            if (output_log) {
+//                if (gt.ptr[y*width + x] <= maxdisp) {
+//                    auto gtInt = (int)std::round(gt.ptr[y*width + x]);
+//                    gtOut << gtInt << '\n';
+//                    for (int i = 0; i < this->maxdisp; i++) {
+//                        rawOut << costs[x*maxdisp + i];
+//                        if (i != maxdisp - 1)
+//                            rawOut << ',';
+//                    }
+//                    rawOut << '\n';
+//                    for (int i = 0; i < this->maxdisp; i++) {
+//                        sgbmOut << costsSummed[x*maxdisp + i];
+//                        if (i != maxdisp - 1)
+//                            sgbmOut << ',';
+//                    }
+//                    sgbmOut << '\n';
+//                }
+//            }
+//#endif
         }
-#if !LOG_1D
-        if (output_log) {
-            for (int x = B_R; x < width - B_R; x++) {
-                //ground truth out
-                auto gtInt = (int)std::round(gt.ptr[y*width + x]);
-                gtInt = gtInt > maxdisp ? -1 : gtInt;
-                gtOut << gtInt;
-                if (x != width - B_R - 1)
-                    gtOut << ',';
-
-                //pixel value
-                auto pxVal = left.ptr[y*width + x];
-                diffOut << pxVal;
-                if (x != width - B_R - 1)
-                    diffOut << ',';
-
-                //raw out
-                for (int i = 0; i < this->maxdisp; i++) {
-                    rawOut << costs[x*maxdisp + i];
-                    if (i != maxdisp - 1 || x != width - B_R - 1)
-                        rawOut << ',';
-                }
-
-                //sgbm out
-                for (int i = 0; i < this->maxdisp; i++) {
-                    sgbmOut << costsSummed[x*maxdisp + i];
-                    if (i != maxdisp - 1 || x != width - B_R - 1)
-                        sgbmOut << ',';
-                }
-            }
-            diffOut << '\n';
-            gtOut << '\n';
-            rawOut << '\n';
-            sgbmOut << '\n';
-        }
-#endif
+//#if !LOG_1D
+//        if (output_log) {
+//            for (int x = B_R; x < width - B_R; x++) {
+//                //ground truth out
+//                auto gtInt = (int)std::round(gt.ptr[y*width + x]);
+//                gtInt = gtInt > maxdisp ? -1 : gtInt;
+//                gtOut << gtInt;
+//                if (x != width - B_R - 1)
+//                    gtOut << ',';
+//
+//                //pixel value
+//                auto pxVal = left.ptr[y*width + x];
+//                diffOut << pxVal;
+//                if (x != width - B_R - 1)
+//                    diffOut << ',';
+//
+//                //raw out
+//                for (int i = 0; i < this->maxdisp; i++) {
+//                    rawOut << costs[x*maxdisp + i];
+//                    if (i != maxdisp - 1 || x != width - B_R - 1)
+//                        rawOut << ',';
+//                }
+//
+//                //sgbm out
+//                for (int i = 0; i < this->maxdisp; i++) {
+//                    sgbmOut << costsSummed[x*maxdisp + i];
+//                    if (i != maxdisp - 1 || x != width - B_R - 1)
+//                        sgbmOut << ',';
+//                }
+//            }
+//            diffOut << '\n';
+//            gtOut << '\n';
+//            rawOut << '\n';
+//            sgbmOut << '\n';
+//        }
+//#endif
     }
 }
