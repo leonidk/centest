@@ -154,6 +154,9 @@
       <Parallelization>true</Parallelization>
       <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
       <UseProcessorExtensions>AVX2</UseProcessorExtensions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CallingConvention>FastCall</CallingConvention>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -163,8 +166,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\bmMatch.cpp" />
-    <ClCompile Include="..\src\cMatch.cpp" />
     <ClCompile Include="..\src\imio.cpp" />
     <ClCompile Include="..\src\imshow.cpp" />
     <ClCompile Include="..\src\r200Match.cpp" />

@@ -87,7 +87,7 @@ namespace util {
             {
                 auto t = histogram[d]; // Use the histogram entry (in the range of [0-256]) to interpolate between nearColor and farColor
                 std::array<int, 3> returnRGB = { 0, 0, 0 };
-                returnRGB = hsvToRgb(remapInt<float, true, 0, 255>(t, nearHue, farHue), 1.f, 1.f);
+                returnRGB = hsvToRgb(remapInt<float, true, 0, 255>((float)t, nearHue, farHue), 1.f, 1.f);
                 *rgb++ = returnRGB[0];
                 *rgb++ = returnRGB[1];
                 *rgb++ = returnRGB[2];

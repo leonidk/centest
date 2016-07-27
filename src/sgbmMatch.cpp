@@ -162,7 +162,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     img::Img<uint32_t> lc(left.width, left.height, (uint32_t*)censusLeft.data());
     img::Img<uint32_t> rc(left.width, left.height, (uint32_t*)censusRight.data());
     img::Img<uint32_t> costI(maxdisp, width, (uint32_t*)costs.data());
-    costsSummed.assign(width * maxdisp, MAXCOST);
+    std::fill(costsSummed.begin(), costsSummed.end(), MAXCOST);
 
     std::vector<int32_t> topCosts(width * maxdisp, MAXCOST);
     std::vector<int32_t> topLeftCosts(width * maxdisp, MAXCOST);
@@ -179,9 +179,9 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     for (int y = B_R; y < height - B_R; y++) {
         //printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
         auto prevVal = 0;
-        costs.assign(width * maxdisp, MAXCOST);
+        std::fill(costs.begin(),costs.end(), MAXCOST);
         if (USE_BLF) {
-             #pragma omp parallel for
+             //#pragma omp parallel for
             for (int x = B_R; x < width - B_R; x++) {
                 auto lb = std::max(B_R, x - maxdisp);
                 auto search_limit = x - lb;
@@ -214,7 +214,7 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
                 }
             }
         } else {
-             #pragma omp parallel for
+             //#pragma omp parallel for
             for (int x = B_R; x < width - B_R; x++) {
                 auto lb = std::max(B_R, x - maxdisp);
                 auto search_limit = x - lb;

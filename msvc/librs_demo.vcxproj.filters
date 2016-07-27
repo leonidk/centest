@@ -4,12 +4,11 @@
     <ClCompile Include="..\src\rs_demo.cpp" />
     <ClCompile Include="..\src\imshow.cpp" />
     <ClCompile Include="..\src\imio.cpp" />
-    <ClCompile Include="..\src\bmMatch.cpp" />
-    <ClCompile Include="..\src\cMatch.cpp" />
     <ClCompile Include="..\src\r200Match.cpp" />
     <ClCompile Include="..\src\sgbmMatch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="$(LIBRS_ROOT)/bin/x64/realsense.dll" />
   </ItemGroup>
 </Project>

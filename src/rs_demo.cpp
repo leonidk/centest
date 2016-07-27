@@ -20,7 +20,7 @@ const int MULDISP = 32;
 int main(int argc, char* argv[])
 {
     rs::context ctx;
-    if (ctx.get_device_count() == 0) throw std::runtime_error("No device detected. Is it plugged in?");
+    if (ctx.get_device_count() == 0) { printf("No device detected. Is it plugged in?\n"); return 1; }
     rs::device & dev = *ctx.get_device(0);
     try {
         dev.enable_stream(rs::stream::depth, 480, 360, rs::format::disparity16, 30);

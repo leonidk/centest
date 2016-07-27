@@ -39,9 +39,30 @@ using namespace stereo;
 #define MM (5)
 #define MT (192)
 
-//optional hole filling for 100% density
+// optional hole filling for 100% density
 // not on r200
-#define HOLE_FILL 0
+#define HOLE_FILL (0)
+
+// domain transform
+#if B_R == 0
+#undef NT
+#undef SP
+#undef SMIN
+#undef SMAX
+#undef MP
+#undef MM
+#undef MT
+#define USE_DT (1)
+#define NT (0)
+#define SP (0)
+#define SMIN (0)
+#define SMAX (USHRT_MAX)
+#define MP (1)
+#define MM (1)
+#define MT (0)
+#define DT_SPACE (10)
+#define DT_RANGE (10)
+#endif
 
 // sampling pattern
 // . X . X . X .
@@ -82,7 +103,7 @@ const int samples[] = {
 
 R200Match::R200Match(int w, int h, int d, int m)
     : StereoMatch(w, h, d, m)
-    , costs(w * d)
+    , costs(w * d * h)
     , censusLeft(w * h, 0)
     , censusRight(w * h, 0)
 {
@@ -110,6 +131,136 @@ static void censusTransform(uint8_t* in, uint32_t* out, int w, int h)
 #else
 #define popcount __builtin_popcount
 #endif
+
+img::Image<uint16_t, 64> domainTransform(
+    img::Image<uint16_t, 64> input,
+    img::Image<uint8_t, 1> guide,
+    const int iters,
+    const float sigma_space,
+    const float sigma_range) {
+    auto ratio = sigma_space / sigma_range;
+
+    img::Image<float, 1> ctx(input.width, input.height);
+    img::Image<float, 1> cty(input.width, input.height);
+    img::Image<float, 1> f_tmp(input.width, input.height);
+
+    img::Image<float, 64> out(input.width, input.height);
+    img::Image<uint16_t, 64> out_final(input.width, input.height);
+
+    for (int i = 0; i < input.width*input.height*64; i++)
+        out.ptr[i] = static_cast<float>(input.ptr[i]);
+
+    //ctx
+    for (int y = 0; y < input.height; y++) {
+        for (int x = 0; x < input.width - 1; x++) {
+            auto idx = (y*ctx.width + x);
+            auto idxn = (y*ctx.width + x + 1);
+            auto idxm = (y*ctx.width + x);
+
+            float sum = (float)std::abs(guide.ptr[idx] - guide.ptr[idxn]);
+            ctx.ptr[idxm] = 1.0f + ratio*sum;
+        }
+    }
+
+    //cty
+    for (int x = 0; x < input.width; x++) {
+        float sum = 0;
+        for (int y = 0; y < input.height - 1; y++) {
+            auto idx = (y*cty.width + x);
+            auto idxn = ((y + 1)*cty.width + x);
+            auto idxm = (y*ctx.width + x);
+
+            float sum = (float)std::abs(guide.ptr[idx] - guide.ptr[idxn]);
+            cty.ptr[idxm] = 1.0f + ratio*sum;
+        }
+    }
+
+    // apply recursive filtering
+    for (int i = 0; i < iters; i++) {
+        auto sigma_H = sigma_space * sqrt(3.0f) * pow(2.0f, iters - i - 1) / sqrt(pow(4.0f, iters) - 1);
+        auto alpha = exp(-sqrt(2.0f) / sigma_H);
+        //horiz pass
+        //generate f
+        for (int y = 0; y < input.height; y++) {
+            for (int x = 0; x < input.width - 1; x++) {
+                auto idx = y*input.width + x;
+                f_tmp.ptr[idx] = pow(alpha, ctx.ptr[idx]);
+            }
+        }
+        //apply
+        for (int y = 0; y < input.height; y++) {
+            for (int x = 1; x < input.width; x++) {
+                auto idx = 64*(y*input.width + x);
+                auto idxp = 64*(y*input.width + x - 1);
+                auto idxpm = (y*input.width + x - 1);
+
+                float a = f_tmp.ptr[idxpm];
+                for (int c = 0; c < 64; c++) {
+                    float p = out.ptr[idx + c];
+                    float pn = out.ptr[idxp + c];
+
+                    out.ptr[idx + c] = p + a*(pn - p);
+                }
+            }
+            for (int x = input.width - 2; x >= 0; x--) {
+                auto idx = 64 * (y*input.width + x);
+                auto idxn = 64 * (y*input.width + x + 1);
+                auto idxm = (y*input.width + x);
+
+                float a = f_tmp.ptr[idxm];
+                for (int c = 0; c < 64; c++) {
+                    float p = out.ptr[idx + c];
+                    float pn = out.ptr[idxn + c];
+
+                    out.ptr[idx + c] = p + a*(pn - p);
+                }
+            }
+        }
+
+        //vertical pass
+        //generate f
+        for (int y = 0; y < input.height - 1; y++) {
+            for (int x = 0; x < input.width; x++) {
+                auto idx = y*input.width + x;
+                f_tmp.ptr[idx] = pow(alpha, cty.ptr[idx]);
+            }
+        }
+        //apply
+        for (int x = 0; x < input.width; x++) {
+            for (int y = 1; y < input.height; y++) {
+                auto idx = 64 * (y*input.width + x);
+                auto idxp = 64 * ((y - 1)*input.width + x);
+                auto idxpm = (y - 1)*input.width + x;
+
+                float a = f_tmp.ptr[idxpm];
+                for (int c = 0; c < 64; c++) {
+                    float p = out.ptr[idx + c];
+                    float pn = out.ptr[idxp + c];
+
+                    out.ptr[idx + c] = p + a*(pn - p);
+                }
+            }
+            for (int y = input.height - 2; y >= 0; y--) {
+                auto idx = 64 * (y*input.width + x);
+                auto idxn = 64 * ((y + 1)*input.width + x);
+                auto idxm = y*input.width + x;
+
+                float a = f_tmp.ptr[idxm];
+                for (int c = 0; c < 64; c++) {
+                    float p = out.ptr[idx + c];
+                    float pn = out.ptr[idxn + c];
+
+                    out.ptr[idx + c] = p + a*(pn - p);
+                }
+            }
+        }
+    }
+    for (int i = 0; i < input.width*input.height * 64; i++)
+        out_final.ptr[i] = (uint16_t)(out.ptr[i] + 0.5f);
+
+    return out_final;
+}
+
 static float subpixel(float costLeft, float costMiddle, float costRight)
 {
     if (costMiddle >= 0xfffe || costLeft >= 0xfffe || costRight >= 0xfffe)
@@ -130,13 +281,14 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     censusTransform(rptr, censusRight.data(), width, height);
     img::Img<uint32_t> lc(left.width, left.height, (uint32_t*)censusLeft.data());
     img::Img<uint32_t> rc(left.width, left.height, (uint32_t*)censusRight.data());
-    img::Img<uint16_t> costI(maxdisp, width, (uint16_t*)costs.data());
+    //img::Img<uint16_t> costI(maxdisp, width, (uint16_t*)costs.data());
+    std::fill(costs.begin(), costs.end(), std::numeric_limits<uint16_t>::max());
+
 
     for (int y = B_R; y < height - B_R; y++) {
         //printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
-        auto prevVal = 0;
-        costs.assign(width * maxdisp, std::numeric_limits<uint16_t>::max());
-         #pragma omp parallel for
+        //#pragma omp parallel for
+        auto costX = costs.data() + y * (width*maxdisp);
         for (int x = B_R; x < width - B_R; x++) {
             auto lb = std::max(B_R, x - maxdisp);
             auto search_limit = x - lb;
@@ -150,16 +302,27 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
                         cost += popcount(pl ^ pr);
                     }
                 }
-                costs[x * maxdisp + d] = cost;
+                costX[x * maxdisp + d] = cost;
             }
         }
+    }
+#if USE_DT
+    img::Image<uint16_t, 64> costImage(left.width, left.height, (uint16_t*)costs.data());
+    // input volume, edge image, iterations (3), X-Y Sigma, Value Sigma)
+    auto costsNew = domainTransform(costImage, left, 3, DT_SPACE, DT_RANGE);
+    img::Image<uint16_t, 64> costImageF(left.width, left.height, (uint16_t*)costsNew.ptr);
+    memcpy(costs.data(), costsNew.ptr, sizeof(uint16_t)*left.width*left.height * 64);
+#endif
+    for (int y = B_R; y < height - B_R; y++) {
+        auto prevVal = 0;
+        auto costX = costs.data() + y * (width*maxdisp);
         for (int x = B_R; x < width - B_R; x++) {
             auto minRVal = std::numeric_limits<uint16_t>::max();
             auto minRIdx = 0;
             auto minLVal = std::numeric_limits<uint16_t>::max();
             auto minLIdx = 0;
             for (int d = 0; d < maxdisp; d++) {
-                auto cost = costs[x * maxdisp + d];
+                auto cost = costX[x * maxdisp + d];
                 if (cost < minLVal) {
                     minLVal = cost;
                     minLIdx = d;
@@ -169,21 +332,21 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             auto xu = std::min(width - 1, xl + maxdisp);
             for (int xd = xl; xd < xu; xd++) {
                 auto d = xd - x + minLIdx;
-                auto cost = costs[xd * maxdisp + d];
+                auto cost = costX[xd * maxdisp + d];
                 if (cost < minRVal) {
                     minRVal = cost;
                     minRIdx = d;
                 }
             }
             // subpixel left
-            auto nL = costs[x * maxdisp + std::max(minLIdx - 1, 0)];
-            auto nC = costs[x * maxdisp + minLIdx];
-            auto nR = costs[x * maxdisp + std::min(minLIdx + 1, maxdisp - 1)];
+            auto nL = costX[x * maxdisp + std::max(minLIdx - 1, 0)];
+            auto nC = costX[x * maxdisp + minLIdx];
+            auto nR = costX[x * maxdisp + std::min(minLIdx + 1, maxdisp - 1)];
             auto spL = (minLIdx > 0 && minLIdx < maxdisp - 1) ? subpixel(nL, nC, nR) : 0;
             // subpixel right
-            auto rL = costs[(x - 1) * maxdisp + std::max(minLIdx - 1, 0)];
-            auto rC = costs[(x)*maxdisp + minLIdx];
-            auto rR = costs[(x + 1) * maxdisp + std::min(minLIdx + 1, maxdisp - 1)];
+            auto rL = costX[std::max(0, (x - 1)) * maxdisp + std::max(minLIdx - 1, 0)];
+            auto rC = costX[(x)*maxdisp + minLIdx];
+            auto rR = costX[std::min(width - 1, (x + 1)) * maxdisp + std::min(minLIdx + 1, maxdisp - 1)];
             auto spR = (minLIdx > 0 && minLIdx < maxdisp - 1) ? subpixel(rL, rC, rR) : 0;
 
             // disparity computation
@@ -200,7 +363,7 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             // second peak threshold
             auto minL2Val = std::numeric_limits<uint16_t>::max();
             for (int d = 0; d < maxdisp; d++) {
-                auto cost = costs[x * maxdisp + d];
+                auto cost = costX[x * maxdisp + d];
                 if (d == minLIdx || d == minLIdx + 1 || d == minLIdx - 1)
                     continue;
                 if (cost < minL2Val)
@@ -227,7 +390,7 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             auto me = std::numeric_limits<uint16_t>::max();
             auto initialized = false;
             for (int d = 0; d < maxdisp; d++) {
-                auto cost = costs[x * maxdisp + d];
+                auto cost = costX[x * maxdisp + d];
                 if (!initialized && cost != std::numeric_limits<uint16_t>::max()) {
                     initialized = true;
                     me = cost;
