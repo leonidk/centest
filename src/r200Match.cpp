@@ -60,8 +60,8 @@ using namespace stereo;
 #define MP (1)
 #define MM (1)
 #define MT (0)
-#define DT_SPACE (10)
-#define DT_RANGE (10)
+#define DT_SPACE (15)
+#define DT_RANGE (30)
 #endif
 
 // sampling pattern
@@ -132,9 +132,10 @@ static void censusTransform(uint8_t* in, uint32_t* out, int w, int h)
 #define popcount __builtin_popcount
 #endif
 
-img::Image<uint16_t, 64> domainTransform(
-    img::Image<uint16_t, 64> input,
-    img::Image<uint8_t, 1> guide,
+template<typename T, int C, typename TG, int CG>
+img::Image<T, C> domainTransform(
+    img::Image<T, C> input,
+    img::Image<TG, CG> guide,
     const int iters,
     const float sigma_space,
     const float sigma_range) {
@@ -144,20 +145,22 @@ img::Image<uint16_t, 64> domainTransform(
     img::Image<float, 1> cty(input.width, input.height);
     img::Image<float, 1> f_tmp(input.width, input.height);
 
-    img::Image<float, 64> out(input.width, input.height);
-    img::Image<uint16_t, 64> out_final(input.width, input.height);
+    img::Image<float, C> out(input.width, input.height);
+    img::Image<T, C> out_final(input.width, input.height);
 
-    for (int i = 0; i < input.width*input.height*64; i++)
+    for (int i = 0; i < input.width*input.height*C; i++)
         out.ptr[i] = static_cast<float>(input.ptr[i]);
 
     //ctx
     for (int y = 0; y < input.height; y++) {
         for (int x = 0; x < input.width - 1; x++) {
-            auto idx = (y*ctx.width + x);
-            auto idxn = (y*ctx.width + x + 1);
+            auto idx = CG*(y*ctx.width + x);
+            auto idxn = CG*(y*ctx.width + x + 1);
             auto idxm = (y*ctx.width + x);
 
-            float sum = (float)std::abs(guide.ptr[idx] - guide.ptr[idxn]);
+            float sum = 0;
+            for (int c = 0; c < CG; c++)
+                sum += std::abs(guide.ptr[idx + c] - guide.ptr[idxn + c]);
             ctx.ptr[idxm] = 1.0f + ratio*sum;
         }
     }
@@ -166,11 +169,13 @@ img::Image<uint16_t, 64> domainTransform(
     for (int x = 0; x < input.width; x++) {
         float sum = 0;
         for (int y = 0; y < input.height - 1; y++) {
-            auto idx = (y*cty.width + x);
-            auto idxn = ((y + 1)*cty.width + x);
+            auto idx = CG*(y*cty.width + x);
+            auto idxn = CG*((y + 1)*cty.width + x);
             auto idxm = (y*ctx.width + x);
 
-            float sum = (float)std::abs(guide.ptr[idx] - guide.ptr[idxn]);
+            float sum = 0;
+            for (int c = 0; c < CG; c++)
+                sum += std::abs(guide.ptr[idx + c] - guide.ptr[idxn + c]);
             cty.ptr[idxm] = 1.0f + ratio*sum;
         }
     }
@@ -190,12 +195,12 @@ img::Image<uint16_t, 64> domainTransform(
         //apply
         for (int y = 0; y < input.height; y++) {
             for (int x = 1; x < input.width; x++) {
-                auto idx = 64*(y*input.width + x);
-                auto idxp = 64*(y*input.width + x - 1);
+                auto idx = C*(y*input.width + x);
+                auto idxp = C*(y*input.width + x - 1);
                 auto idxpm = (y*input.width + x - 1);
 
                 float a = f_tmp.ptr[idxpm];
-                for (int c = 0; c < 64; c++) {
+                for (int c = 0; c < C; c++) {
                     float p = out.ptr[idx + c];
                     float pn = out.ptr[idxp + c];
 
@@ -203,12 +208,12 @@ img::Image<uint16_t, 64> domainTransform(
                 }
             }
             for (int x = input.width - 2; x >= 0; x--) {
-                auto idx = 64 * (y*input.width + x);
-                auto idxn = 64 * (y*input.width + x + 1);
+                auto idx = C*(y*input.width + x);
+                auto idxn = C*(y*input.width + x + 1);
                 auto idxm = (y*input.width + x);
 
                 float a = f_tmp.ptr[idxm];
-                for (int c = 0; c < 64; c++) {
+                for (int c = 0; c < C; c++) {
                     float p = out.ptr[idx + c];
                     float pn = out.ptr[idxn + c];
 
@@ -228,12 +233,12 @@ img::Image<uint16_t, 64> domainTransform(
         //apply
         for (int x = 0; x < input.width; x++) {
             for (int y = 1; y < input.height; y++) {
-                auto idx = 64 * (y*input.width + x);
-                auto idxp = 64 * ((y - 1)*input.width + x);
+                auto idx = C*(y*input.width + x);
+                auto idxp = C*((y - 1)*input.width + x);
                 auto idxpm = (y - 1)*input.width + x;
 
                 float a = f_tmp.ptr[idxpm];
-                for (int c = 0; c < 64; c++) {
+                for (int c = 0; c < C; c++) {
                     float p = out.ptr[idx + c];
                     float pn = out.ptr[idxp + c];
 
@@ -241,12 +246,12 @@ img::Image<uint16_t, 64> domainTransform(
                 }
             }
             for (int y = input.height - 2; y >= 0; y--) {
-                auto idx = 64 * (y*input.width + x);
-                auto idxn = 64 * ((y + 1)*input.width + x);
+                auto idx = C*(y*input.width + x);
+                auto idxn = C*((y + 1)*input.width + x);
                 auto idxm = y*input.width + x;
 
                 float a = f_tmp.ptr[idxm];
-                for (int c = 0; c < 64; c++) {
+                for (int c = 0; c < C; c++) {
                     float p = out.ptr[idx + c];
                     float pn = out.ptr[idxn + c];
 
@@ -255,11 +260,12 @@ img::Image<uint16_t, 64> domainTransform(
             }
         }
     }
-    for (int i = 0; i < input.width*input.height * 64; i++)
-        out_final.ptr[i] = (uint16_t)(out.ptr[i] + 0.5f);
+    for (int i = 0; i < input.width*input.height*C; i++)
+        out_final.ptr[i] = (T)(out.ptr[i] + 0.5f);
 
     return out_final;
 }
+
 
 static float subpixel(float costLeft, float costMiddle, float costRight)
 {
