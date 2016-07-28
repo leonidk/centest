@@ -12,12 +12,12 @@ using namespace stereo;
 #define C_W (2 * C_R + 1)
 
 // Box Filter Radius and Width
-#define B_R (3)
+#define B_R (0)
 #define B_W (2 * B_R + 1)
 
 // Left-Right Threshold
 // Dependent on subpixel algorithm. May not work well with subpixel
-#define LRT (2)
+#define LRT (1)
 #define LRS (0.75f)
 
 // Neighbor Threshold
@@ -32,7 +32,7 @@ using namespace stereo;
 
 // Score Limits
 #define SMIN (1)
-#define SMAX (384)
+#define SMAX (512)
 
 // Median
 #define MP (5)
@@ -52,16 +52,35 @@ using namespace stereo;
 #undef MP
 #undef MM
 #undef MT
-#define USE_DT (1)
 #define NT (0)
 #define SP (0)
 #define SMIN (0)
-#define SMAX (USHRT_MAX)
-#define MP (1)
-#define MM (1)
-#define MT (0)
-#define DT_SPACE (15)
-#define DT_RANGE (30)
+#define SMAX (512)
+#define MP (5)
+#define MM (5)
+#define MT (50)
+
+
+#define USE_DT (1)
+#define DT_SCALE (49)
+#define DT_ITER   (3)
+//
+////DS4-like
+//#define DT_SPACE (3)
+//#define DT_RANGE (USHRT_MAX)
+
+// better mode?
+//#define DT_SPACE (10)
+//#define DT_RANGE (60)
+
+// blob mode
+#define DT_SPACE (30)
+#define DT_RANGE (USHRT_MAX)
+
+// better mode?
+//#define DT_SPACE (USHRT_MAX)
+//#define DT_RANGE (30)
+
 #endif
 
 // sampling pattern
@@ -261,7 +280,7 @@ img::Image<T, C> domainTransform(
         }
     }
     for (int i = 0; i < input.width*input.height*C; i++)
-        out_final.ptr[i] = (T)(out.ptr[i] + 0.5f);
+        out_final.ptr[i] = (T)(DT_SCALE*out.ptr[i] + 0.5f);
 
     return out_final;
 }
@@ -288,8 +307,9 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     img::Img<uint32_t> lc(left.width, left.height, (uint32_t*)censusLeft.data());
     img::Img<uint32_t> rc(left.width, left.height, (uint32_t*)censusRight.data());
     //img::Img<uint16_t> costI(maxdisp, width, (uint16_t*)costs.data());
-    std::fill(costs.begin(), costs.end(), std::numeric_limits<uint16_t>::max());
-
+    std::fill(costs.begin(), costs.end(), SMAX);
+    img::Img<uint16_t> interesting(left.width, left.height);
+    memset(interesting.ptr, 0, left.width*left.height * 2);
 
     for (int y = B_R; y < height - B_R; y++) {
         //printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
@@ -315,7 +335,7 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
 #if USE_DT
     img::Image<uint16_t, 64> costImage(left.width, left.height, (uint16_t*)costs.data());
     // input volume, edge image, iterations (3), X-Y Sigma, Value Sigma)
-    auto costsNew = domainTransform(costImage, left, 3, DT_SPACE, DT_RANGE);
+    auto costsNew = domainTransform(costImage, left, DT_ITER, DT_SPACE, DT_RANGE);
     img::Image<uint16_t, 64> costImageF(left.width, left.height, (uint16_t*)costsNew.ptr);
     memcpy(costs.data(), costsNew.ptr, sizeof(uint16_t)*left.width*left.height * 64);
 #endif
@@ -357,14 +377,15 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
 
             // disparity computation
             uint16_t res = (uint16_t)std::round((minLIdx + spL) * muldisp);
+            uint16_t bitMask = 0;
 
             // left-right threshold
-            res = abs(minLIdx - minRIdx) < LRT && abs(spR - spL) < LRS ? res : 0;
+            bitMask |= (abs(minLIdx - minRIdx) <= LRT && abs(spR - spL) <= LRS);
 
             // neighbor threshold
             auto diffL = (int)nL - (int)nC;
             auto diffR = (int)nR - (int)nC;
-            res = (diffL > NT || diffR > NT) ? res : 0;
+            bitMask |= (diffL >= NT || diffR >= NT) << 1;
 
             // second peak threshold
             auto minL2Val = std::numeric_limits<uint16_t>::max();
@@ -376,7 +397,7 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
                     minL2Val = cost;
             }
             auto diffSP = minL2Val - minLVal;
-            res = (diffSP > SP) ? res : 0;
+            bitMask |= (diffSP >= SP) << 2;
 
             // texture difference (waste of time?)
             //auto tc = 0;
@@ -387,10 +408,11 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             //        tc += abs(centerV - v) > TD ? 1 : 0;
             //    }
             //}
-            //res = (tc >= TC) ? res : 0;
+            //bitMask |= (tc >= TC) << 3;
 
             // score limits
-            res = (minLVal >= SMIN && minLVal <= SMAX) ? res : 0;
+            bitMask |= (minLVal >= SMIN && minLVal <= SMAX) << 4;
+
 
             // median threshold
             auto me = std::numeric_limits<uint16_t>::max();
@@ -406,8 +428,11 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
                 else if (cost < me)
                     me -= MM;
             }
-            res = (me - minLVal > MT) ? res : 0;
+            bitMask |= (me - minLVal >= MT) << 5;
 
+            //mask
+            res = (bitMask == 0x37) ? res : 0;
+            interesting.ptr[y*width + x] = bitMask;
             // hole filling
             if (HOLE_FILL) {
                 prevVal = res ? res : prevVal;
