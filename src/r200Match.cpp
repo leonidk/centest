@@ -45,15 +45,16 @@ using namespace stereo;
 
 // domain transform
 #if B_R == 0
-#undef NT
-#undef SP
+//#undef NT
+//#undef SP
+////#define NT (0)
+////#define SP (0)
+
 #undef SMIN
 #undef SMAX
 #undef MP
 #undef MM
 #undef MT
-#define NT (0)
-#define SP (0)
 #define SMIN (0)
 #define SMAX (512)
 #define MP (5)
@@ -150,7 +151,7 @@ static void censusTransform(uint8_t* in, uint32_t* out, int w, int h)
 #else
 #define popcount __builtin_popcount
 #endif
-
+#define DT_B_R (0)
 template<typename T, int C, typename TG, int CG>
 img::Image<T, C> domainTransform(
     img::Image<T, C> input,
@@ -160,9 +161,9 @@ img::Image<T, C> domainTransform(
     const float sigma_range) {
     auto ratio = sigma_space / sigma_range;
 
-    img::Image<float, 1> ctx(input.width, input.height);
-    img::Image<float, 1> cty(input.width, input.height);
-    img::Image<float, 1> f_tmp(input.width, input.height);
+    img::Image<float, 1> ctx(input.width, input.height,0.f);
+    img::Image<float, 1> cty(input.width, input.height,0.f);
+    img::Image<float, 1> f_tmp(input.width, input.height,0.f);
 
     img::Image<float, C> out(input.width, input.height);
     img::Image<T, C> out_final(input.width, input.height);
@@ -212,8 +213,8 @@ img::Image<T, C> domainTransform(
             }
         }
         //apply
-        for (int y = 0; y < input.height; y++) {
-            for (int x = 1; x < input.width; x++) {
+        for (int y = DT_B_R; y < input.height - B_R; y++) {
+            for (int x = B_R+1; x < input.width-B_R; x++) {
                 auto idx = C*(y*input.width + x);
                 auto idxp = C*(y*input.width + x - 1);
                 auto idxpm = (y*input.width + x - 1);
@@ -226,7 +227,7 @@ img::Image<T, C> domainTransform(
                     out.ptr[idx + c] = p + a*(pn - p);
                 }
             }
-            for (int x = input.width - 2; x >= 0; x--) {
+            for (int x = input.width - -B_R -2; x >= B_R; x--) {
                 auto idx = C*(y*input.width + x);
                 auto idxn = C*(y*input.width + x + 1);
                 auto idxm = (y*input.width + x);
@@ -243,15 +244,15 @@ img::Image<T, C> domainTransform(
 
         //vertical pass
         //generate f
-        for (int y = 0; y < input.height - 1; y++) {
-            for (int x = 0; x < input.width; x++) {
+        for (int y = B_R; y < input.height - 1 - B_R; y++) {
+            for (int x = B_R; x < input.width-B_R; x++) {
                 auto idx = y*input.width + x;
                 f_tmp.ptr[idx] = pow(alpha, cty.ptr[idx]);
             }
         }
         //apply
-        for (int x = 0; x < input.width; x++) {
-            for (int y = 1; y < input.height; y++) {
+        for (int x = B_R; x < input.width-B_R; x++) {
+            for (int y = B_R+1; y < input.height - B_R; y++) {
                 auto idx = C*(y*input.width + x);
                 auto idxp = C*((y - 1)*input.width + x);
                 auto idxpm = (y - 1)*input.width + x;
@@ -264,7 +265,7 @@ img::Image<T, C> domainTransform(
                     out.ptr[idx + c] = p + a*(pn - p);
                 }
             }
-            for (int y = input.height - 2; y >= 0; y--) {
+            for (int y = input.height - 2 - B_R; y >= B_R; y--) {
                 auto idx = C*(y*input.width + x);
                 auto idxn = C*((y + 1)*input.width + x);
                 auto idxm = y*input.width + x;
@@ -306,15 +307,14 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     censusTransform(rptr, censusRight.data(), width, height);
     img::Img<uint32_t> lc(left.width, left.height, (uint32_t*)censusLeft.data());
     img::Img<uint32_t> rc(left.width, left.height, (uint32_t*)censusRight.data());
-    //img::Img<uint16_t> costI(maxdisp, width, (uint16_t*)costs.data());
-    std::fill(costs.begin(), costs.end(), SMAX);
-    img::Img<uint16_t> interesting(left.width, left.height);
-    memset(interesting.ptr, 0, left.width*left.height * 2);
+	img::Image<uint16_t, 64> costImage(left.width, left.height, (uint16_t*)costs.data());
+	std::fill(costs.begin(), costs.end(), (SMAX + DT_SCALE - 1) / DT_SCALE);
+    img::Img<uint16_t> interesting(left.width, left.height,(uint16_t)0);
 
     for (int y = B_R; y < height - B_R; y++) {
         //printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
-        //#pragma omp parallel for
         auto costX = costs.data() + y * (width*maxdisp);
+#pragma omp parallel for
         for (int x = B_R; x < width - B_R; x++) {
             auto lb = std::max(B_R, x - maxdisp);
             auto search_limit = x - lb;
@@ -333,7 +333,6 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
         }
     }
 #if USE_DT
-    img::Image<uint16_t, 64> costImage(left.width, left.height, (uint16_t*)costs.data());
     // input volume, edge image, iterations (3), X-Y Sigma, Value Sigma)
     auto costsNew = domainTransform(costImage, left, DT_ITER, DT_SPACE, DT_RANGE);
     img::Image<uint16_t, 64> costImageF(left.width, left.height, (uint16_t*)costsNew.ptr);
@@ -342,6 +341,7 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
     for (int y = B_R; y < height - B_R; y++) {
         auto prevVal = 0;
         auto costX = costs.data() + y * (width*maxdisp);
+#pragma omp parallel for
         for (int x = B_R; x < width - B_R; x++) {
             auto minRVal = std::numeric_limits<uint16_t>::max();
             auto minRIdx = 0;
@@ -391,10 +391,15 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             auto minL2Val = std::numeric_limits<uint16_t>::max();
             for (int d = 0; d < maxdisp; d++) {
                 auto cost = costX[x * maxdisp + d];
-                if (d == minLIdx || d == minLIdx + 1 || d == minLIdx - 1)
-                    continue;
-                if (cost < minL2Val)
-                    minL2Val = cost;
+                auto costNext = (d == maxdisp - 1) ? cost : costX[x * maxdisp + d+1];
+                auto costPrev = (d == 0) ? cost : costX[x * maxdisp + d - 1];
+
+                if (cost < costNext && cost < costPrev) {
+                    if (d == minLIdx)
+                        continue;
+                    if (cost < minL2Val)
+                        minL2Val = cost;
+                }
             }
             auto diffSP = minL2Val - minLVal;
             bitMask |= (diffSP >= SP) << 2;

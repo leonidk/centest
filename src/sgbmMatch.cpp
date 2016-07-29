@@ -474,10 +474,15 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             uint32_t minL2Val = MAXCOST;
             for (int d = 0; d < maxdisp; d++) {
                 auto cost = costsSummed[x * maxdisp + d];
-                if (d == minLIdx || d == minLIdx + 1 || d == minLIdx - 1)
-                    continue;
-                if (cost < minL2Val)
-                    minL2Val = cost;
+                auto costNext = (d == maxdisp - 1) ? cost : costsSummed[x * maxdisp + d + 1];
+                auto costPrev = (d == 0) ? cost : costsSummed[x * maxdisp + d - 1];
+
+                if (cost < costNext && cost < costPrev) {
+                    if (d == minLIdx)
+                        continue;
+                    if (cost < minL2Val)
+                        minL2Val = cost;
+                }
             }
             auto diffSP = minL2Val - minLVal;
             res = (diffSP > SP) ? res : 0;

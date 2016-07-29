@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
     }
     
     img::imwrite("disp-out.png", ot);
-    printf("\n\n %ld seconds\n", std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count());
+    printf("\n\n %ld seconds\n", std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count());
     printf("\n\n %lf average error\n", sqrt(mse / count));
 
     return 0;

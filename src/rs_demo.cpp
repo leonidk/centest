@@ -74,6 +74,8 @@ int main(int argc, char* argv[])
             util::ConvertDepthToRGBUsingHistogram(himg5.ptr, disp_s.ptr, iw, ih, 0.1f, 0.625f);
             img::imshow("ds4", himg4);
             img::imshow("sw", himg5);
+            img::imshow("ir", limg);
+
         }
 
     } while (img::getKey() != 'q');

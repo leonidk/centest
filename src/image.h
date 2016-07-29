@@ -29,6 +29,11 @@ namespace img {
         {
             ptr = data.get();
         }
+        Image(int width, int height, T d)
+            : Image(width, height)
+        {
+            std::fill(ptr, ptr + width*height*C, d);
+        }
         Image(int width, int height, T* d)
             : data(d, null_d())
             , width(width)
@@ -43,6 +48,11 @@ namespace img {
         struct arr_d {
             void operator()(T const* p) { delete[] p; }
         };
+        T& operator()(int i) { return ptr[i]; }
+        T& operator()(int y, int x) { return ptr[y*width + x]; }
+        T& operator()(int y, int x, int c) { return ptr[C*(y*width + x) + c]; }
+
+
         inline T sample(const float x, const float y, const int chan)
         {
             auto pixX = [this](float x) { return (int)clamp_f(0.0f, (float)(width - 1), std::round(x)); };
