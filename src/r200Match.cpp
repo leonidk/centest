@@ -12,7 +12,7 @@ using namespace stereo;
 #define C_W (2 * C_R + 1)
 
 // Box Filter Radius and Width
-#define B_R (0)
+#define B_R (3)
 #define B_W (2 * B_R + 1)
 
 // Left-Right Threshold
@@ -81,7 +81,9 @@ using namespace stereo;
 // better mode?
 //#define DT_SPACE (USHRT_MAX)
 //#define DT_RANGE (30)
-
+#else
+#define DT_SCALE (1)
+#define DT_ITER   (0)
 #endif
 
 // sampling pattern

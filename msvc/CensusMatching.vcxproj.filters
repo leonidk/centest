@@ -43,6 +43,9 @@
     <ClInclude Include="..\src\stereo.h" />
     <ClInclude Include="..\src\r200Match.h" />
     <ClInclude Include="..\src\sgbmMatch.h" />
+    <ClInclude Include="..\src\json.h">
+      <Filter>libs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="libs">

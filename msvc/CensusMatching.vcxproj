@@ -159,6 +159,7 @@
     <ClInclude Include="..\src\image_filter.h" />
     <ClInclude Include="..\src\imio.h" />
     <ClInclude Include="..\src\imshow.h" />
+    <ClInclude Include="..\src\json.h" />
     <ClInclude Include="..\src\r200Match.h" />
     <ClInclude Include="..\src\sgbmMatch.h" />
     <ClInclude Include="..\src\stb_image.h" />

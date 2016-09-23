@@ -46,6 +46,6 @@ namespace img {
 	template Image<uint8_t, 3> imread(const char * name);
 	template Image<uint8_t, 4> imread(const char * name);
 	template Image<float, 4> imread(const char * name);
-
-
+	template Image<uint16_t, 1> imread(const char * name);
+	template Image<uint16_t, 3> imread(const char * name);
 }

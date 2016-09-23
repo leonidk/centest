@@ -679,6 +679,10 @@ namespace img {
     Image<uint8_t, 1> Rgb2grey(const Image<uint8_t, 3> & input){
         return detail::_Rgb2grey<uint8_t, uint16_t>(input);
     }
+	template <>
+	Image<uint16_t, 1> Rgb2grey(const Image<uint16_t, 3> & input) {
+		return detail::_Rgb2grey<uint16_t, uint32_t>(input);
+	}
 
     //intImage
     template <typename T, int C, typename TT>
