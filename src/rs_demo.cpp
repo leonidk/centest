@@ -25,8 +25,8 @@ int main(int argc, char* argv[])
     try {
         dev.enable_stream(rs::stream::depth, 480, 360, rs::format::disparity16, 30);
         dev.enable_stream(rs::stream::color, 640, 480, rs::format::rgb8, 30);
-        dev.enable_stream(rs::stream::infrared, 492, 372, rs::format::y8, 30);
-        dev.enable_stream(rs::stream::infrared2, 492, 372, rs::format::y8, 30);
+        dev.enable_stream(rs::stream::infrared, 492, 372, rs::format::y16, 30);
+        dev.enable_stream(rs::stream::infrared2, 492, 372, rs::format::y16, 30);
 
         // Start our device
         dev.start();
@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
     auto h = dev.get_stream_height(rs::stream::depth);
     auto iw = dev.get_stream_width(rs::stream::infrared);
     auto ih = dev.get_stream_height(rs::stream::infrared);
-    stereo::R200Match cm(iw, ih, MAXDISP, MULDISP);
+    stereo::sgbmMatch cm(iw, ih, MAXDISP, MULDISP);
     auto himg4 = img::Image<uint8_t, 3>(w, h);
     auto himg5 = img::Image<uint8_t, 3>(iw, ih);
     img::Img<uint16_t> disp_s(iw, ih);
@@ -64,11 +64,16 @@ int main(int argc, char* argv[])
 
 
             auto dimg = img::Img<uint16_t>(w, h, (uint16_t*)disp);
-            auto limg = img::Img<uint8_t>(iw, ih, (uint8_t*)left);
-            auto rimg = img::Img<uint8_t>(iw, ih, (uint8_t*)right);
+            auto limg = img::Img<uint16_t>(iw, ih, (uint16_t*)left).copy();
+            auto rimg = img::Img<uint16_t>(iw, ih, (uint16_t*)right).copy();
 
-            cm.match(limg, rimg, disp_s);
-
+			for (int i = 0; i < iw*ih; i++)
+				limg(i) >>= 6;
+			for (int i = 0; i < iw*ih; i++)
+				rimg(i) >>= 6;
+            auto res = cm.match(limg, rimg);
+			for (int i = 0; i < iw*ih; i++)
+				disp_s(i) = res.second(i) > 0.5 ? res.first(i) : 0;
 
             util::ConvertDepthToRGBUsingHistogram(himg4.ptr, dimg.ptr, w, h, 0.1f, 0.625f);
             util::ConvertDepthToRGBUsingHistogram(himg5.ptr, disp_s.ptr, iw, ih, 0.1f, 0.625f);

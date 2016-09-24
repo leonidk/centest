@@ -15,7 +15,7 @@ public:
 		int second_peak = 50;
 		int texture_diff = 0;
 		int texture_count = 0;
-		int score_min = 1;
+		int score_min = 0;
 		int score_max = 20000;
 		int median_plus = 10;
 		int median_minus = 10;
