@@ -8,64 +8,7 @@ using namespace stereo;
 // Using the parameters from
 // https://github.com/IntelRealSense/librealsense/blob/master/include/librealsense/rsutil.h
 
-// Census Radius and Width
-#define C_R (3)
-#define C_W (2 * C_R + 1)
 
-// Box Filter Radius and Width
-#define B_R (3)
-#define B_W (2 * B_R + 1)
-
-// Cost Multipliers
-#define C_M (3)
-#define A_M (1)
-
-// Left-Right Threshold
-// Dependent on subpixel algorithm. May not work well with subpixel
-#define LRT (2)
-#define LRS (0.75f)
-
-// Neighbor Threshold
-#define NT (20)
-
-// Second Peak
-#define SP (50)
-
-// Texture Diff (commented out below)
-#define TD (4)
-#define TC (6)
-
-// Score Limits
-#define SMIN (1)
-#define SMAX (20000)
-
-// Median
-#define MP (10)
-#define MM (10)
-#define MT (500)
-
-// SGM Settings
-#define P1 (2000)
-#define P2 (4 * P1)
-
-#define MAXCOST (SMAX) //(0x00ffffff)
-#define USE_SGM (1)
-
-// scale SGM P2 as P2 = P2/grad.
-// should make propogation stop at edges
-#define SCALE_P2 (1)
-
-//bilateral filter on the weights
-#define USE_BLF (0)
-#define RANGESIGMA (5 * 5)
-#define SPACESIGMA ((B_R / 2.0f) * (B_R / 2.0f))
-
-// hole filling
-#define MOVE_LEFT (0)
-
-#define LOG_1D (1)
-const int output_log = 0;
-const std::string input_file("");
 // sampling pattern
 // . X . X . X .
 // X . X . X . X
@@ -74,7 +17,8 @@ const std::string input_file("");
 // . X . X . X .
 // X . X . X . X
 // . X . X . X .
-
+#define C_R (3)
+#define C_W (2 * C_R + 1)
 // y,x
 const int samples[] = {
     -3, -2,
@@ -112,8 +56,13 @@ sgbmMatch::sgbmMatch(int w, int h, int d, int m)
     , censusRight(w * h, 0)
 {
 }
+sgbmMatch::sgbmMatch(int w, int h, int maxdisp, const alg_config & cfg)
+	: sgbmMatch(w, h, maxdisp, cfg.dispmul)
+{
+	config = cfg;
+}
 
-static void censusTransform(uint8_t* in, uint32_t* out, int w, int h)
+static void censusTransform(uint16_t* in, uint32_t* out, int w, int h)
 {
     int ns = (int)(sizeof(samples) / sizeof(int)) / 2;
     for (int y = C_R; y < h - C_R; y++) {
@@ -145,90 +94,81 @@ static float subpixel(float costLeft, float costMiddle, float costRight)
     return den != 0 ? 0.5f * (num / den) : 0;
 }
 
-void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Img<uint16_t>& disp)
-{
-    img::Img<float> gt;
-    this->match(left, right, gt, disp);
-}
-void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Img<float> & gt, img::Img<uint16_t>& disp)
+
+void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::Img<uint16_t>& disp, img::Img<uint8_t>& conf)
 {
     auto lptr = left.data.get();
     auto rptr = right.data.get();
     auto dptr = disp.data.get();
-    auto gptr = gt.data.get();
+
+	auto box_width = config.box_radius * 2 + 1;
 
     censusTransform(lptr, censusLeft.data(), width, height);
     censusTransform(rptr, censusRight.data(), width, height);
     img::Img<uint32_t> lc(left.width, left.height, (uint32_t*)censusLeft.data());
     img::Img<uint32_t> rc(left.width, left.height, (uint32_t*)censusRight.data());
     img::Img<uint32_t> costI(maxdisp, width, (uint32_t*)costs.data());
-    std::fill(costsSummed.begin(), costsSummed.end(), MAXCOST);
+    std::fill(costsSummed.begin(), costsSummed.end(), config.score_max);
 
-    std::vector<int32_t> topCosts(width * maxdisp, MAXCOST);
-    std::vector<int32_t> topLeftCosts(width * maxdisp, MAXCOST);
-    std::vector<int32_t> topRightCosts(width * maxdisp, MAXCOST);
-    float bilateralWeights[B_W * B_W];
+    std::vector<int32_t> topCosts(width * maxdisp, config.score_max);
+    std::vector<int32_t> topLeftCosts(width * maxdisp, config.score_max);
+    std::vector<int32_t> topRightCosts(width * maxdisp, config.score_max);
+    std::vector<float> bilateralWeights(box_width * box_width);
 
-    std::ofstream gtOut; if (output_log) gtOut = std::ofstream("gt.csv");
-    std::ofstream sgbmOut; if (output_log) sgbmOut = std::ofstream("sgbm.csv");
-    std::ofstream rawOut; if (output_log) rawOut = std::ofstream("raw.csv");
-    std::ofstream diffOut; if (output_log) diffOut = std::ofstream("diff.csv");
-
-    std::ifstream predIn; if (input_file.size()) predIn = std::ifstream(input_file);
     
-    for (int y = B_R; y < height - B_R; y++) {
+    for (int y = config.box_radius; y < height - config.box_radius; y++) {
         //printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
         auto prevVal = 0;
-        std::fill(costs.begin(),costs.end(), MAXCOST);
-        if (USE_BLF) {
+        std::fill(costs.begin(),costs.end(), config.score_max);
+        if (config.use_blf) {
              //#pragma omp parallel for
-            for (int x = B_R; x < width - B_R; x++) {
-                auto lb = std::max(B_R, x - maxdisp);
+            for (int x = config.box_radius; x < width - config.box_radius; x++) {
+                auto lb = std::max(config.box_radius, x - maxdisp);
                 auto search_limit = x - lb;
                 float middlePx = lptr[(y)*width + (x)];
                 float blW = 0;
-                for (int i = -B_R; i <= B_R; i++) {
-                    for (int j = -B_R; j <= B_R; j++) {
+                for (int i = -config.box_radius; i <= config.box_radius; i++) {
+                    for (int j = -config.box_radius; j <= config.box_radius; j++) {
                         float px = lptr[(y + i) * width + (x + j)];
-                        auto rw = expf(-(px - middlePx) / (2.f * RANGESIGMA));
-                        auto sw = expf(-sqrtf((float)(i * i + j * j)) / (2.f * SPACESIGMA));
-                        bilateralWeights[(i + B_R) * B_W + (j + B_R)] = rw * sw;
+                        auto rw = expf(-(px - middlePx) / (2.f * config.blf_range));
+                        auto sw = expf(-sqrtf((float)(i * i + j * j)) / (2.f * config.blf_space));
+                        bilateralWeights[(i + config.box_radius) * box_width + (j + config.box_radius)] = rw * sw;
                         blW += rw * sw;
                     }
                 }
 
                 for (int d = 0; d < search_limit; d++) {
                     float cost = 0;
-                    for (int i = -B_R; i <= B_R; i++) {
-                        for (int j = -B_R; j <= B_R; j++) {
+                    for (int i = -config.box_radius; i <= config.box_radius; i++) {
+                        for (int j = -config.box_radius; j <= config.box_radius; j++) {
                             auto pl = censusLeft[(y + i) * width + (x + j)];
                             auto pr = censusRight[(y + i) * width + (x + j - d)];
 
                             auto al = lptr[(y + i) * width + (x + j)];
                             auto ar = rptr[(y + i) * width + (x + j - d)];
 
-                            cost += bilateralWeights[(i + B_R) * B_W + (j + B_R)] * (C_M * popcount(pl ^ pr) + A_M * abs(al - ar));
+                            cost += bilateralWeights[(i + config.box_radius) * box_width + (j + config.box_radius)] * (config.cost_ham * popcount(pl ^ pr) + config.cost_abs * abs(al - ar));
                         }
                     }
-                    costs[x * maxdisp + d] = (uint32_t)std::round((B_W * B_W) * cost / blW);
+                    costs[x * maxdisp + d] = (uint32_t)std::round((box_width * box_width) * cost / blW);
                 }
             }
         } else {
              //#pragma omp parallel for
-            for (int x = B_R; x < width - B_R; x++) {
-                auto lb = std::max(B_R, x - maxdisp);
+            for (int x = config.box_radius; x < width - config.box_radius; x++) {
+                auto lb = std::max(config.box_radius, x - maxdisp);
                 auto search_limit = x - lb;
                 for (int d = 0; d < search_limit; d++) {
                     uint16_t cost = 0;
-                    for (int i = -B_R; i <= B_R; i++) {
-                        for (int j = -B_R; j <= B_R; j++) {
+                    for (int i = -config.box_radius; i <= config.box_radius; i++) {
+                        for (int j = -config.box_radius; j <= config.box_radius; j++) {
                             auto pl = censusLeft[(y + i) * width + (x + j)];
                             auto pr = censusRight[(y + i) * width + (x + j - d)];
 
                             auto al = lptr[(y + i) * width + (x + j)];
                             auto ar = rptr[(y + i) * width + (x + j - d)];
 
-                            cost += C_M * popcount(pl ^ pr) + A_M * abs(al - ar);
+                            cost += config.cost_ham * popcount(pl ^ pr) + config.cost_abs * abs(al - ar);
                         }
                     }
                     costs[x * maxdisp + d] = cost;
@@ -238,21 +178,21 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
         auto clipD = [&](int d) { return std::min(maxdisp - 1, std::max(0, d)); };
 
         //  semiglobal
-        if (USE_SGM) {
-            std::vector<int32_t> leftCosts(width * maxdisp, MAXCOST);
-            std::vector<int32_t> rightCosts(width * maxdisp, MAXCOST);
+        if (config.sgm) {
+            std::vector<int32_t> leftCosts(width * maxdisp, config.score_max);
+            std::vector<int32_t> rightCosts(width * maxdisp, config.score_max);
 
             //left
             for (int x = 1; x < width; x++) {
-                auto p1 = P1;
-                auto p2 = P2;
-                if (SCALE_P2) {
+                auto p1 =config.p1;
+                auto p2 =config.p2;
+                if (config.scale_p2) {
                     auto grad = abs(lptr[y * width + x - 1] - lptr[y * width + x]) + 1;
                     p2 = (p2 + grad - 1) / grad;
                     p1 = std::min(p1, p2 - 1);
                 }
                 auto lftI = 0;
-                auto lftV = MAXCOST;
+                auto lftV = config.score_max;
                 for (int d = 0; d < maxdisp; d++) {
                     auto cost = leftCosts[(x - 1) * maxdisp + d];
                     if (cost < lftV) {
@@ -274,15 +214,15 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             }
             //top
             for (int x = 0; x < width; x++) {
-                auto p1 = P1;
-                auto p2 = P2;
-                if (SCALE_P2) {
+                auto p1 =config.p1;
+                auto p2 =config.p2;
+                if (config.scale_p2) {
                     auto grad = abs(lptr[(y - 1) * width + x] - lptr[y * width + x]) + 1;
                     p2 = (p2 + grad - 1) / grad;
                     p1 = std::min(p1, p2 - 1);
                 }
                 auto topI = 0;
-                auto topV = MAXCOST;
+                auto topV = config.score_max;
                 for (int d = 0; d < maxdisp; d++) {
                     auto cost = topCosts[(x)*maxdisp + d];
                     if (cost < topV) {
@@ -303,15 +243,15 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             }
             // topleft
             for (int x = 1; x < width; x++) {
-                auto p1 = P1;
-                auto p2 = P2;
-                if (SCALE_P2) {
+                auto p1 =config.p1;
+                auto p2 =config.p2;
+                if (config.scale_p2) {
                     auto grad = abs(lptr[(y - 1) * width + x - 1] - lptr[y * width + x]) + 1;
                     p2 = (p2 + grad - 1) / grad;
                     p1 = std::min(p1, p2 - 1);
                 }
                 auto tplI = 0;
-                auto tplV = MAXCOST;
+                auto tplV = config.score_max;
                 for (int d = 0; d < maxdisp; d++) {
                     auto cost = topLeftCosts[(x - 1) * maxdisp + d];
                     if (cost < tplV) {
@@ -333,15 +273,15 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             }
             //right
             for (int x = width - 2; x >= 0; x--) {
-                auto p1 = P1;
-                auto p2 = P2;
-                if (SCALE_P2) {
+                auto p1 =config.p1;
+                auto p2 =config.p2;
+                if (config.scale_p2) {
                     auto grad = abs(lptr[(y)*width + x + 1] - lptr[y * width + x]) + 1;
                     p2 = (p2 + grad - 1) / grad;
                     p1 = std::min(p1, p2 - 1);
                 }
                 auto rgtI = 0;
-                auto rgtV = MAXCOST;
+                auto rgtV = config.score_max;
                 for (int d = 0; d < maxdisp; d++) {
                     auto cost = rightCosts[(x + 1) * maxdisp + d];
                     if (cost < rgtV) {
@@ -363,15 +303,15 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             }
             //topRight
             for (int x = width - 2; x >= 0; x--) {
-                auto p1 = P1;
-                auto p2 = P2;
-                if (SCALE_P2) {
+                auto p1 =config.p1;
+                auto p2 =config.p2;
+                if (config.scale_p2) {
                     auto grad = abs(lptr[(y - 1) * width + x + 1] - lptr[y * width + x]) + 1;
                     p2 = (p2 + grad - 1) / grad;
                     p1 = std::min(p1, p2 - 1);
                 }
                 auto rgtI = 0;
-                auto rgtV = MAXCOST;
+                auto rgtV = config.score_max;
                 for (int d = 0; d < maxdisp; d++) {
                     auto cost = topRightCosts[(x + 1) * maxdisp + d];
                     if (cost < rgtV) {
@@ -408,10 +348,10 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             }
         }
         //min selection
-        for (int x = B_R; x < width - B_R; x++) {
-            auto minRVal = (uint32_t)MAXCOST;
+        for (int x = config.box_radius; x < width - config.box_radius; x++) {
+            auto minRVal = (uint32_t)config.score_max;
             auto minRIdx = 0;
-            auto minLVal = (uint32_t)MAXCOST;
+            auto minLVal = (uint32_t)config.score_max;
             auto minLIdx = 0;
             for (int d = 0; d < maxdisp; d++) {
                 auto cost = costsSummed[x * maxdisp + d];
@@ -443,35 +383,18 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
 
             // disparity computation
             uint16_t res = (uint16_t)std::round((minLIdx + spL) * muldisp);
-            //if (input_file.size()) {
-            //    auto correct = gt.ptr[y*width + x];
-            //    if (correct <= maxdisp) {
-            //        float predDisp;
-            //        predIn >> predDisp;
-            //        int intDisp = (int)predDisp;
-            //        res = (uint16_t)(muldisp*predDisp);
-            //    }
-            //    else {
-            //        res = 0;
-            //    }
-            //}
-            //else {
-            //    auto correct = gt.ptr[y*width + x];
-            //    if (correct > maxdisp) {
-            //        res = 0;
-            //    }
-            //}
+			uint16_t bitMask = 0;
 
             // left-right threshold
-            res = abs(minLIdx - minRIdx) < LRT && abs(spR - spL) < LRS ? res : 0;
+			bitMask |= (abs(minLIdx - minRIdx) <= config.left_right_int && abs(spR - spL) <= config.left_right_sub);
 
             // neighbor threshold
             auto diffL = (int)nL - (int)nC;
             auto diffR = (int)nR - (int)nC;
-            res = (diffL > NT || diffR > NT) ? res : 0;
+			bitMask |= (diffL >= config.neighbor || diffR >= config.neighbor) << 1;
 
             // second peak threshold
-            uint32_t minL2Val = MAXCOST;
+            uint32_t minL2Val = config.score_max;
             for (int d = 0; d < maxdisp; d++) {
                 auto cost = costsSummed[x * maxdisp + d];
                 auto costNext = (d == maxdisp - 1) ? cost : costsSummed[x * maxdisp + d + 1];
@@ -485,101 +408,46 @@ void sgbmMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
                 }
             }
             auto diffSP = minL2Val - minLVal;
-            res = (diffSP > SP) ? res : 0;
+			bitMask |= (diffSP >= config.second_peak) << 2;
 
             // texture difference (waste of time?)
-            //auto tc = 0;
-            //int centerV = lptr[y*width + x];
-            //for (int i = -B_R; i <= B_R; i++) {
-            //    for (int j = -B_R; j <= B_R; j++) {
-            //        int v = lptr[(y + i)*width + (x + j)];
-            //        tc += abs(centerV - v) > TD ? 1 : 0;
-            //    }
-            //}
-            //res = (tc >= TC) ? res : 0;
+            auto tc = 0;
+            int centerV = lptr[y*width + x];
+            for (int i = -config.box_radius; i <= config.box_radius; i++) {
+                for (int j = -config.box_radius; j <= config.box_radius; j++) {
+                    int v = lptr[(y + i)*width + (x + j)];
+                    tc += abs(centerV - v) > config.texture_diff ? 1 : 0;
+                }
+            }
+			bitMask |= (tc >= config.texture_count) << 3;
 
             // score limits
-            res = (minLVal >= SMIN && minLVal <= SMAX) ? res : 0;
+			bitMask |= (minLVal >= config.score_min && minLVal <= config.score_max) << 4;
 
             // median threshold
-            uint32_t me = MAXCOST;
+            uint32_t me = config.score_max;
             auto initialized = false;
             for (int d = 0; d < maxdisp; d++) {
                 auto cost = costsSummed[x * maxdisp + d];
-                if (!initialized && cost != MAXCOST) {
+                if (!initialized && cost != config.score_max) {
                     initialized = true;
                     me = cost;
                 }
                 if (cost > me)
-                    me += MP;
+                    me += config.median_plus;
                 else if (cost < me)
-                    me -= MM;
+                    me -= config.median_minus;
             }
-            res = (me - minLVal > MT) ? res : 0;
+			bitMask |= (me - minLVal >= config.median_thresh) << 5;
+			conf(y, x) = (bitMask == 0x3F) ? 1 : 0;
 
             // hole filling
-            if (MOVE_LEFT) {
-                prevVal = res ? res : prevVal;
-                res = res ? res : prevVal;
-            }
+            //if (MOVE_LEFT) {
+            //    prevVal = res ? res : prevVal;
+            //    res = res ? res : prevVal;
+            //}
             // final set
             dptr[y * width + x] = res;
-//#if LOG_1D
-//            if (output_log) {
-//                if (gt.ptr[y*width + x] <= maxdisp) {
-//                    auto gtInt = (int)std::round(gt.ptr[y*width + x]);
-//                    gtOut << gtInt << '\n';
-//                    for (int i = 0; i < this->maxdisp; i++) {
-//                        rawOut << costs[x*maxdisp + i];
-//                        if (i != maxdisp - 1)
-//                            rawOut << ',';
-//                    }
-//                    rawOut << '\n';
-//                    for (int i = 0; i < this->maxdisp; i++) {
-//                        sgbmOut << costsSummed[x*maxdisp + i];
-//                        if (i != maxdisp - 1)
-//                            sgbmOut << ',';
-//                    }
-//                    sgbmOut << '\n';
-//                }
-//            }
-//#endif
         }
-//#if !LOG_1D
-//        if (output_log) {
-//            for (int x = B_R; x < width - B_R; x++) {
-//                //ground truth out
-//                auto gtInt = (int)std::round(gt.ptr[y*width + x]);
-//                gtInt = gtInt > maxdisp ? -1 : gtInt;
-//                gtOut << gtInt;
-//                if (x != width - B_R - 1)
-//                    gtOut << ',';
-//
-//                //pixel value
-//                auto pxVal = left.ptr[y*width + x];
-//                diffOut << pxVal;
-//                if (x != width - B_R - 1)
-//                    diffOut << ',';
-//
-//                //raw out
-//                for (int i = 0; i < this->maxdisp; i++) {
-//                    rawOut << costs[x*maxdisp + i];
-//                    if (i != maxdisp - 1 || x != width - B_R - 1)
-//                        rawOut << ',';
-//                }
-//
-//                //sgbm out
-//                for (int i = 0; i < this->maxdisp; i++) {
-//                    sgbmOut << costsSummed[x*maxdisp + i];
-//                    if (i != maxdisp - 1 || x != width - B_R - 1)
-//                        sgbmOut << ',';
-//                }
-//            }
-//            diffOut << '\n';
-//            gtOut << '\n';
-//            rawOut << '\n';
-//            sgbmOut << '\n';
-//        }
-//#endif
     }
 }

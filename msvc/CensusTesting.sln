@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librs_demo", "librs_demo.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rms_error", "rsm_error.vcxproj", "{E911E0D0-2AA2-438C-95B2-DFD8E56BF9C4}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vis_pfm", "vis_pfm.vcxproj", "{12618367-A31D-4BC9-B199-F7BCF2C0D77D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -55,6 +57,18 @@ Global
 		{E911E0D0-2AA2-438C-95B2-DFD8E56BF9C4}.Release|Win32.Build.0 = Release|Win32
 		{E911E0D0-2AA2-438C-95B2-DFD8E56BF9C4}.Release|x64.ActiveCfg = Release|x64
 		{E911E0D0-2AA2-438C-95B2-DFD8E56BF9C4}.Release|x64.Build.0 = Release|x64
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Debug|Win32.Build.0 = Debug|Win32
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Debug|x64.ActiveCfg = Debug|x64
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Debug|x64.Build.0 = Debug|x64
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Release|Win32.ActiveCfg = Release|Win32
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Release|Win32.Build.0 = Release|Win32
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Release|x64.ActiveCfg = Release|x64
+		{12618367-A31D-4BC9-B199-F7BCF2C0D77D}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

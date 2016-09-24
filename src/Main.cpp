@@ -14,39 +14,8 @@
 #define JSON_H_IMPLEMENTATION
 #include "json.h"
 
-// folder target
-// contains
-//  * calib.txt
-//  * disp0GT.pfm
-//  * im0.png
-//  * im1.png
-//  * mask0nocc.png
-
-struct alg_config {
-	int dispmul = 4;
-	std::string algorithm = "r200";
-	int box_radius = 3;
-	int left_right_int = 1;
-	float left_right_sub = 0.75;
-	int neighbor = 7;
-	int second_peak = 10;
-	int texture_diff = 4;
-	int texture_count = 6;
-	int score_min = 1;
-	int score_max = 512;
-	int median_plus = 5;
-	int median_minus = 5;
-	int median_thresh = 192;
-	bool hole_fill = false;
-	bool domain_transform = false;
-	int dt_scale = 1;
-	int dt_iter = 1;
-	float dt_space = 10;
-	float dt_range = 90;
-};
-template<class F> void visit_fields(alg_config & o, F f) {
+template<class F> void visit_fields(stereo::R200Match::alg_config & o, F f) {
 	f("dispmul", o.dispmul);
-	f("algorithm", o.algorithm);
 	f("box_radius", o.box_radius);
 	f("left_right_int", o.left_right_int);
 	f("left_right_sub", o.left_right_sub);
@@ -66,13 +35,33 @@ template<class F> void visit_fields(alg_config & o, F f) {
 	f("dt_space", o.dt_space);
 	f("dt_range", o.dt_range);
 }
-
-
-const int MAXDISP = 70;
-const int MULDISP = 4;
+template<class F> void visit_fields(stereo::sgbmMatch::alg_config & o, F f) {
+	f("dispmul", o.dispmul);
+	f("box_radius", o.box_radius);
+	f("left_right_int", o.left_right_int);
+	f("left_right_sub", o.left_right_sub);
+	f("neighbor", o.neighbor);
+	f("second_peak", o.second_peak);
+	f("texture_diff", o.texture_diff);
+	f("texture_count", o.texture_count);
+	f("score_min", o.score_min);
+	f("score_max", o.score_max);
+	f("median_plus", o.median_plus);
+	f("median_minus", o.median_minus);
+	f("median_thresh", o.median_thresh);
+	f("hole_fill", o.hole_fill);
+	f("cost_abs", o.cost_abs);
+	f("cost_ham", o.cost_ham);
+	f("p1", o.p1);
+	f("p2", o.p2);
+	f("sgm", o.sgm);
+	f("scale_p2", o.scale_p2);
+	f("use_blf", o.use_blf);
+	f("blf_range", o.blf_range);
+	f("blf_space", o.blf_space);
+}
 int main(int argc, char* argv[])
 {
-	alg_config cfg;
 	json::value doc;
     if (argc < 2)
         return 1;
@@ -81,7 +70,6 @@ int main(int argc, char* argv[])
 		std::string str((std::istreambuf_iterator<char>(in)),
 			std::istreambuf_iterator<char>());
 		doc = json::parse(str);
-		from_json(cfg, doc["config"]);
 	}
 	else {
 		return 1;
@@ -101,57 +89,40 @@ int main(int argc, char* argv[])
 		left_g(i) >>= bitshift;
 		right_g(i) >>= bitshift;
 	}
-	img::Img<uint16_t> disp(left.width, left.height);
-	
-    memset(disp.data.get(), 0, left.width * left.height * sizeof(uint16_t));
+
 	std::unique_ptr<stereo::StereoMatch> cm(nullptr);
-	if (cfg.algorithm == "r200") {
-		cm = std::make_unique<stereo::R200Match>(left.width, left.height, MAXDISP, MULDISP);
+	float scale_disp = 4.f;
+	float scale_conf = 1.f;
+	if (doc["config"]["algorithm"].string() == "r200") {
+		stereo::R200Match::alg_config cfg;
+		from_json(cfg, doc["config"]);
+		cm = std::make_unique<stereo::R200Match>(left.width, left.height,doc["maxdisp"].number<int>(),cfg);
+		scale_disp = (float)cfg.dispmul;
+	} else if (doc["config"]["algorithm"].string() == "sgbm") {
+		stereo::sgbmMatch::alg_config cfg;
+		from_json(cfg, doc["config"]);
+		cm = std::make_unique<stereo::sgbmMatch>(left.width, left.height, doc["maxdisp"].number<int>(), cfg);
+		scale_disp = (float)cfg.dispmul;
+	} else {
+		cm = std::make_unique<stereo::R200Match>(left.width, left.height, doc["maxdisp"].number<int>(), (int)scale_disp);
 	}
-	else {
+    auto startTime = std::chrono::steady_clock::now();
+	auto res = cm->match(left_g, right_g);
+	auto disp = res.first;
+	auto conf = res.second;
+    auto endTime = std::chrono::steady_clock::now();
 
-	}
-    //stereo::sgbmMatch cm(;
+	img::Img<float> dispf(disp.width, disp.height, 0.f);
+	img::Img<float> conff(conf.width, conf.height, 0.f);
 
+	for (int i = 0; i < disp.width*disp.height; i++)
+		dispf(i) = static_cast<float>(disp(i)) / scale_disp;
+	for (int i = 0; i < conf.width*conf.height; i++)
+		conff(i) = static_cast<float>(conf(i)) / scale_conf;
 
-    ////for debug
-    //for (int i = 0; i < gt.width * gt.height; i++) {
-    //    gt.ptr[i] = (mask.ptr[i] != 255) ? std::numeric_limits<float>::infinity() : gt.ptr[i];
-    //}
+	img::imwrite(doc["output_disp"].string().c_str(), dispf);
+	img::imwrite(doc["output_conf"].string().c_str(), conff);
 
-    //auto startTime = std::chrono::steady_clock::now();
-    //cm.match(left_g, right_g,gt,disp);
-    //auto endTime = std::chrono::steady_clock::now();;
-
-    //auto ot = img::Image<uint8_t, 1>(disp.width, disp.height);
-    //auto dptr = disp.data.get();
-    //auto optr = ot.data.get();
-    //auto mptr = mask.data.get();
-
-    //memset(optr, 0, disp.width * disp.height);
-
-    //for (int i = 0; i < ot.width * ot.height; i++) {
-    //    optr[i] = (uint8_t)std::round(dptr[i] * 254.0 / (static_cast<double>(cm.maxdisp * cm.muldisp)));
-    //}
-    //double mse = 0;
-    //double count = 0;
-    //auto sqr = [](double a) { return a * a; };
-    //auto gptr = gt.data.get();
-
-    //for (int i = 0; i < ot.width * ot.height; i++) {
-    //    double pred = dptr[i] / static_cast<double>(cm.muldisp);
-    //    double corr = gptr[i];
-    //    uint8_t msk = mptr[i];
-
-    //    if (std::isfinite(corr) && msk == 255) {
-    //        mse += sqr(pred - corr);
-    //        count++;
-    //    }
-    //}
-    //
-    //img::imwrite("disp-out.png", ot);
-    //printf("\n\n %ld seconds\n", std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count());
-    //printf("\n\n %lf average error\n", sqrt(mse / count));
 
     return 0;
 }

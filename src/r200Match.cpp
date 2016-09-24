@@ -10,80 +10,10 @@ using namespace stereo;
 // Census Radius and Width
 #define C_R (3)
 #define C_W (2 * C_R + 1)
-
-// Box Filter Radius and Width
-#define B_R (3)
-#define B_W (2 * B_R + 1)
-
-// Left-Right Threshold
-// Dependent on subpixel algorithm. May not work well with subpixel
-#define LRT (1)
-#define LRS (0.75f)
-
-// Neighbor Threshold
-#define NT (7)
-
-// Second Peak
-#define SP (10)
-
-// Texture Diff (commented out below)
-#define TD (4)
-#define TC (6)
-
-// Score Limits
-#define SMIN (1)
-#define SMAX (512)
-
-// Median
-#define MP (5)
-#define MM (5)
-#define MT (192)
-
-// optional hole filling for 100% density
-// not on r200
-#define HOLE_FILL (0)
-
-// domain transform
-#if B_R == 0
-//#undef NT
-//#undef SP
-////#define NT (0)
-////#define SP (0)
-
-#undef SMIN
-#undef SMAX
-#undef MP
-#undef MM
-#undef MT
-#define SMIN (0)
-#define SMAX (512)
-#define MP (5)
-#define MM (5)
-#define MT (50)
-
-
-#define USE_DT (1)
-#define DT_SCALE (49)
-#define DT_ITER   (3)
-//
-////DS4-like
-//#define DT_SPACE (3)
-//#define DT_RANGE (USHRT_MAX)
-
-// better mode?
-//#define DT_SPACE (10)
-//#define DT_RANGE (60)
-
-// blob mode
-#define DT_SPACE (30)
-#define DT_RANGE (USHRT_MAX)
-
-// better mode?
-//#define DT_SPACE (USHRT_MAX)
-//#define DT_RANGE (30)
+#ifdef _WIN32
+#define popcount __popcnt
 #else
-#define DT_SCALE (1)
-#define DT_ITER   (0)
+#define popcount __builtin_popcount
 #endif
 
 // sampling pattern
@@ -131,7 +61,13 @@ R200Match::R200Match(int w, int h, int d, int m)
 {
 }
 
-static void censusTransform(uint8_t* in, uint32_t* out, int w, int h)
+R200Match::R200Match(int w, int h, int maxdisp, const alg_config & cfg)
+	: R200Match(w, h, maxdisp, cfg.dispmul)
+{
+	config = cfg;
+}
+
+static void censusTransform(uint16_t* in, uint32_t* out, int w, int h)
 {
     int ns = (int)(sizeof(samples) / sizeof(int)) / 2;
     for (int y = C_R; y < h - C_R; y++) {
@@ -148,34 +84,33 @@ static void censusTransform(uint8_t* in, uint32_t* out, int w, int h)
     }
 }
 
-#ifdef _WIN32
-#define popcount __popcnt
-#else
-#define popcount __builtin_popcount
-#endif
-#define DT_B_R (0)
-template<typename T, int C, typename TG, int CG>
-img::Image<T, C> domainTransform(
-    img::Image<T, C> input,
-    img::Image<TG, CG> guide,
-    const int iters,
-    const float sigma_space,
-    const float sigma_range) {
-    auto ratio = sigma_space / sigma_range;
 
-    img::Image<float, 1> ctx(input.width, input.height,0.f);
-    img::Image<float, 1> cty(input.width, input.height,0.f);
-    img::Image<float, 1> f_tmp(input.width, input.height,0.f);
+template<typename TG, int CG>
+std::vector<uint16_t> domainTransform(
+	const std::vector<uint16_t>& input,
+	img::Image<TG, CG> guide,
+	const R200Match::alg_config & config
+	) {
+    auto ratio = config.dt_space / config.dt_range;
+	const int DT_B_R = config.box_radius;
+	auto width = guide.width;
+	auto height = guide.height;
+	auto C = input.size()/ (width*height) ;
 
-    img::Image<float, C> out(input.width, input.height);
-    img::Image<T, C> out_final(input.width, input.height);
 
-    for (int i = 0; i < input.width*input.height*C; i++)
-        out.ptr[i] = static_cast<float>(input.ptr[i]);
+    img::Image<float, 1> ctx(width, height,0.f);
+    img::Image<float, 1> cty(width, height,0.f);
+    img::Image<float, 1> f_tmp(width, height,0.f);
+
+	std::vector<float> out(input.size());
+	std::vector<uint16_t> out_final(input.size());
+
+    for (int i = 0; i < width*height*C; i++)
+        out[i] = static_cast<float>(input[i]);
 
     //ctx
-    for (int y = 0; y < input.height; y++) {
-        for (int x = 0; x < input.width - 1; x++) {
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width - 1; x++) {
             auto idx = CG*(y*ctx.width + x);
             auto idxn = CG*(y*ctx.width + x + 1);
             auto idxm = (y*ctx.width + x);
@@ -188,9 +123,9 @@ img::Image<T, C> domainTransform(
     }
 
     //cty
-    for (int x = 0; x < input.width; x++) {
+    for (int x = 0; x < width; x++) {
         float sum = 0;
-        for (int y = 0; y < input.height - 1; y++) {
+        for (int y = 0; y < height - 1; y++) {
             auto idx = CG*(y*cty.width + x);
             auto idxn = CG*((y + 1)*cty.width + x);
             auto idxm = (y*ctx.width + x);
@@ -203,91 +138,90 @@ img::Image<T, C> domainTransform(
     }
 
     // apply recursive filtering
-    for (int i = 0; i < iters; i++) {
-        auto sigma_H = sigma_space * sqrt(3.0f) * pow(2.0f, iters - i - 1) / sqrt(pow(4.0f, iters) - 1);
+    for (int i = 0; i < config.dt_iter; i++) {
+        auto sigma_H = config.dt_space * sqrt(3.0f) * pow(2.0f, config.dt_iter - i - 1) / sqrt(pow(4.0f, config.dt_iter) - 1);
         auto alpha = exp(-sqrt(2.0f) / sigma_H);
         //horiz pass
         //generate f
-        for (int y = 0; y < input.height; y++) {
-            for (int x = 0; x < input.width - 1; x++) {
-                auto idx = y*input.width + x;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width - 1; x++) {
+                auto idx = y*width + x;
                 f_tmp.ptr[idx] = pow(alpha, ctx.ptr[idx]);
             }
         }
         //apply
-        for (int y = DT_B_R; y < input.height - B_R; y++) {
-            for (int x = B_R+1; x < input.width-B_R; x++) {
-                auto idx = C*(y*input.width + x);
-                auto idxp = C*(y*input.width + x - 1);
-                auto idxpm = (y*input.width + x - 1);
+        for (int y = DT_B_R; y < height - DT_B_R; y++) {
+            for (int x = DT_B_R +1; x < width- DT_B_R; x++) {
+                auto idx = C*(y*width + x);
+                auto idxp = C*(y*width + x - 1);
+                auto idxpm = (y*width + x - 1);
 
                 float a = f_tmp.ptr[idxpm];
                 for (int c = 0; c < C; c++) {
-                    float p = out.ptr[idx + c];
-                    float pn = out.ptr[idxp + c];
+                    float p = out[idx + c];
+                    float pn = out[idxp + c];
 
-                    out.ptr[idx + c] = p + a*(pn - p);
+                    out[idx + c] = p + a*(pn - p);
                 }
             }
-            for (int x = input.width - -B_R -2; x >= B_R; x--) {
-                auto idx = C*(y*input.width + x);
-                auto idxn = C*(y*input.width + x + 1);
-                auto idxm = (y*input.width + x);
+            for (int x = width - -DT_B_R -2; x >= DT_B_R; x--) {
+                auto idx = C*(y*width + x);
+                auto idxn = C*(y*width + x + 1);
+                auto idxm = (y*width + x);
 
                 float a = f_tmp.ptr[idxm];
                 for (int c = 0; c < C; c++) {
-                    float p = out.ptr[idx + c];
-                    float pn = out.ptr[idxn + c];
+                    float p = out[idx + c];
+                    float pn = out[idxn + c];
 
-                    out.ptr[idx + c] = p + a*(pn - p);
+                    out[idx + c] = p + a*(pn - p);
                 }
             }
         }
 
         //vertical pass
         //generate f
-        for (int y = B_R; y < input.height - 1 - B_R; y++) {
-            for (int x = B_R; x < input.width-B_R; x++) {
-                auto idx = y*input.width + x;
+        for (int y = DT_B_R; y < height - 1 - DT_B_R; y++) {
+            for (int x = DT_B_R; x < width- DT_B_R; x++) {
+                auto idx = y*width + x;
                 f_tmp.ptr[idx] = pow(alpha, cty.ptr[idx]);
             }
         }
         //apply
-        for (int x = B_R; x < input.width-B_R; x++) {
-            for (int y = B_R+1; y < input.height - B_R; y++) {
-                auto idx = C*(y*input.width + x);
-                auto idxp = C*((y - 1)*input.width + x);
-                auto idxpm = (y - 1)*input.width + x;
+        for (int x = DT_B_R; x < width- DT_B_R; x++) {
+            for (int y = DT_B_R +1; y < height - DT_B_R; y++) {
+                auto idx = C*(y*width + x);
+                auto idxp = C*((y - 1)*width + x);
+                auto idxpm = (y - 1)*width + x;
 
                 float a = f_tmp.ptr[idxpm];
                 for (int c = 0; c < C; c++) {
-                    float p = out.ptr[idx + c];
-                    float pn = out.ptr[idxp + c];
+                    float p = out[idx + c];
+                    float pn = out[idxp + c];
 
-                    out.ptr[idx + c] = p + a*(pn - p);
+                    out[idx + c] = p + a*(pn - p);
                 }
             }
-            for (int y = input.height - 2 - B_R; y >= B_R; y--) {
-                auto idx = C*(y*input.width + x);
-                auto idxn = C*((y + 1)*input.width + x);
-                auto idxm = y*input.width + x;
+            for (int y = height - 2 - DT_B_R; y >= DT_B_R; y--) {
+                auto idx = C*(y*width + x);
+                auto idxn = C*((y + 1)*width + x);
+                auto idxm = y*width + x;
 
                 float a = f_tmp.ptr[idxm];
                 for (int c = 0; c < C; c++) {
-                    float p = out.ptr[idx + c];
-                    float pn = out.ptr[idxn + c];
+                    float p = out[idx + c];
+                    float pn = out[idxn + c];
 
-                    out.ptr[idx + c] = p + a*(pn - p);
+                    out[idx + c] = p + a*(pn - p);
                 }
             }
         }
     }
-    for (int i = 0; i < input.width*input.height*C; i++)
-        out_final.ptr[i] = (T)(DT_SCALE*out.ptr[i] + 0.5f);
+    for (int i = 0; i < width*height*C; i++)
+        out_final[i] = (uint16_t)(config.dt_scale*out[i] + 0.5f);
 
     return out_final;
 }
-
 
 static float subpixel(float costLeft, float costMiddle, float costRight)
 {
@@ -299,19 +233,20 @@ static float subpixel(float costLeft, float costMiddle, float costRight)
     return den != 0 ? 0.5f * (num / den) : 0;
 }
 
-void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Img<uint16_t>& disp)
+void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::Img<uint16_t>& disp, img::Img<uint8_t>& conf)
 {
     auto lptr = left.data.get();
     auto rptr = right.data.get();
     auto dptr = disp.data.get();
 
+	// old school?
+	const auto B_R = config.box_radius;
+
     censusTransform(lptr, censusLeft.data(), width, height);
     censusTransform(rptr, censusRight.data(), width, height);
     img::Img<uint32_t> lc(left.width, left.height, (uint32_t*)censusLeft.data());
     img::Img<uint32_t> rc(left.width, left.height, (uint32_t*)censusRight.data());
-	img::Image<uint16_t, 64> costImage(left.width, left.height, (uint16_t*)costs.data());
-	std::fill(costs.begin(), costs.end(), (SMAX + DT_SCALE - 1) / DT_SCALE);
-    img::Img<uint16_t> interesting(left.width, left.height,(uint16_t)0);
+	std::fill(costs.begin(), costs.end(), (config.score_max + config.dt_scale - 1) / config.dt_scale);
 
     for (int y = B_R; y < height - B_R; y++) {
         //printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
@@ -334,12 +269,10 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             }
         }
     }
-#if USE_DT
-    // input volume, edge image, iterations (3), X-Y Sigma, Value Sigma)
-    auto costsNew = domainTransform(costImage, left, DT_ITER, DT_SPACE, DT_RANGE);
-    img::Image<uint16_t, 64> costImageF(left.width, left.height, (uint16_t*)costsNew.ptr);
-    memcpy(costs.data(), costsNew.ptr, sizeof(uint16_t)*left.width*left.height * 64);
-#endif
+	if (config.domain_transform) {
+		// input volume, edge image, iterations (3), X-Y Sigma, Value Sigma)
+		costs = domainTransform(costs, left, config);
+	}
     for (int y = B_R; y < height - B_R; y++) {
         auto prevVal = 0;
         auto costX = costs.data() + y * (width*maxdisp);
@@ -382,12 +315,12 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
             uint16_t bitMask = 0;
 
             // left-right threshold
-            bitMask |= (abs(minLIdx - minRIdx) <= LRT && abs(spR - spL) <= LRS);
+            bitMask |= (abs(minLIdx - minRIdx) <= config.left_right_int && abs(spR - spL) <= config.left_right_sub);
 
             // neighbor threshold
             auto diffL = (int)nL - (int)nC;
             auto diffR = (int)nR - (int)nC;
-            bitMask |= (diffL >= NT || diffR >= NT) << 1;
+            bitMask |= (diffL >= config.neighbor || diffR >= config.neighbor) << 1;
 
             // second peak threshold
             auto minL2Val = std::numeric_limits<uint16_t>::max();
@@ -404,21 +337,21 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
                 }
             }
             auto diffSP = minL2Val - minLVal;
-            bitMask |= (diffSP >= SP) << 2;
+            bitMask |= (diffSP >= config.second_peak) << 2;
 
             // texture difference (waste of time?)
-            //auto tc = 0;
-            //int centerV = lptr[y*width + x];
-            //for (int i = -B_R; i <= B_R; i++) {
-            //    for (int j = -B_R; j <= B_R; j++) {
-            //        int v = lptr[(y + i)*width + (x + j)];
-            //        tc += abs(centerV - v) > TD ? 1 : 0;
-            //    }
-            //}
-            //bitMask |= (tc >= TC) << 3;
+            auto tc = 0;
+            int centerV = lptr[y*width + x];
+            for (int i = -B_R; i <= B_R; i++) {
+                for (int j = -B_R; j <= B_R; j++) {
+                    int v = lptr[(y + i)*width + (x + j)];
+                    tc += abs(centerV - v) > config.texture_diff ? 1 : 0;
+                }
+            }
+            bitMask |= (tc >= config.texture_count) << 3;
 
             // score limits
-            bitMask |= (minLVal >= SMIN && minLVal <= SMAX) << 4;
+            bitMask |= (minLVal >= config.score_min && minLVal <= config.score_max) << 4;
 
 
             // median threshold
@@ -431,20 +364,19 @@ void R200Match::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Im
                     me = cost;
                 }
                 if (cost > me)
-                    me += MP;
+                    me += config.median_plus;
                 else if (cost < me)
-                    me -= MM;
+                    me -= config.median_minus;
             }
-            bitMask |= (me - minLVal >= MT) << 5;
+            bitMask |= (me - minLVal >= config.median_thresh) << 5;
 
             //mask
-            res = (bitMask == 0x37) ? res : 0;
-            interesting.ptr[y*width + x] = bitMask;
+            conf(y,x) = (bitMask == 0x3F) ? 1 : 0;
             // hole filling
-            if (HOLE_FILL) {
-                prevVal = res ? res : prevVal;
-                res = res ? res : prevVal;
-            }
+            //if (config.hole_fill) {
+            //    prevVal = res ? res : prevVal;
+            //    res = res ? res : prevVal;
+            //}
 
             // final set
             dptr[y * width + x] = res;

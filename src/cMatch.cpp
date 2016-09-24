@@ -51,7 +51,7 @@ CensusMatch::CensusMatch(int w, int h, int d, int m)
 {
 }
 
-static void censusTransform(uint8_t* in, uint32_t* out, int w, int h)
+static void censusTransform(uint16_t* in, uint32_t* out, int w, int h)
 {
     int ns = (int)(sizeof(samples) / sizeof(int)) / 2;
     for (int y = C_R; y < h - C_R; y++) {
@@ -83,7 +83,7 @@ static float subpixel(float costLeft, float costMiddle, float costRight)
     return den != 0 ? 0.5f * (num / den) : 0;
 }
 
-void CensusMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Img<uint16_t>& disp)
+void CensusMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::Img<uint16_t>& disp, img::Img<uint8_t>& conf)
 {
     auto lptr = left.data.get();
     auto rptr = right.data.get();

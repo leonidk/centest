@@ -20,7 +20,7 @@ BMatch::BMatch(int w, int h, int d, int m)
 {
 }
 
-static void edgeDetect(uint8_t* in, int16_t* out, int w, int h)
+static void edgeDetect(uint16_t* in, int16_t* out, int w, int h)
 {
     for (int y = 1; y < h - 1; y++) {
         for (int x = 1; x < w - 1; x++) {
@@ -40,7 +40,7 @@ static void edgeDetect(uint8_t* in, int16_t* out, int w, int h)
         }
     }
 }
-static void edgeDetectDummy(uint8_t* in, int16_t* out, int w, int h)
+static void edgeDetectDummy(uint16_t* in, int16_t* out, int w, int h)
 {
     for (int y = 1; y < h - 1; y++) {
         for (int x = 1; x < w - 1; x++) {
@@ -57,7 +57,7 @@ static float subpixel(float costLeft, float costMiddle, float costRight)
     auto den = (2 * (costRight + costLeft - 2 * costMiddle));
     return den != 0 ? 0.5f * (num / den) : 0;
 }
-void BMatch::match(img::Img<uint8_t>& left, img::Img<uint8_t>& right, img::Img<uint16_t>& disp)
+void BMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::Img<uint16_t>& disp, img::Img<uint8_t>& conf)
 {
     auto lptr = left.data.get();
     auto rptr = right.data.get();

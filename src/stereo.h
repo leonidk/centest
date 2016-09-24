@@ -12,15 +12,16 @@ public:
         , height(h)
         , maxdisp(d)
         , muldisp(m){};
-    virtual void match(img::Img<uint8_t>& left, img::Img<uint8_t>& right,
-        img::Img<uint16_t>& disp)
+    virtual void match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,
+        img::Img<uint16_t>& disp, img::Img<uint8_t>& conf)
         = 0;
-    img::Img<uint16_t> match(img::Img<uint8_t>& left, img::Img<uint8_t>& right)
+    std::pair<img::Img<uint16_t>, img::Img<uint8_t>> match(img::Img<uint16_t>& left, img::Img<uint16_t>& right)
     {
-        img::Img<uint16_t> disp(left.width, left.height);
-        memset(disp.data.get(), 0, width * height * sizeof(uint16_t));
-        this->match(left, right, disp);
-        return disp;
+        img::Img<uint16_t> disp(left.width, left.height,uint16_t(0));
+		img::Img<uint8_t> conf(left.width, left.height,uint8_t(0));
+
+        this->match(left, right, disp, conf);
+        return std::make_pair(disp,conf);
     }
 
 public: // but please don't set!
