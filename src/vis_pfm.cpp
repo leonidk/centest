@@ -1,6 +1,7 @@
 #include "image.h"
 #include "imio.h"
 
+#include <climits>
 #include <string>
 #include <fstream>
 #include "cam_util.h"

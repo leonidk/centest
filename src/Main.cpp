@@ -1,3 +1,4 @@
+#include <memory>
 #include "bmMatch.h"
 #include "cMatch.h"
 #include "imio.h"

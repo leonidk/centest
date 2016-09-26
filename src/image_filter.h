@@ -1,5 +1,6 @@
 #pragma once
 #include "image.h"
+#include <climits>
 #include <cstring>
 namespace img {
     namespace detail {

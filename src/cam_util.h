@@ -1,7 +1,8 @@
 #pragma once
 #include <array>
 #include <cstdint>
-
+#include <climits>
+#include <algorithm>
 namespace util {
     template<class T> T clamp(T a, T mn, T mx) { return std::max(std::min(a, mx), mn); }
 

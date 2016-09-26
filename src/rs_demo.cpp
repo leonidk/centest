@@ -12,7 +12,7 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
-#include <librealsense\rs.hpp>
+#include <librealsense/rs.hpp>
 
 
 const int MAXDISP = 64;
