@@ -48,19 +48,22 @@ SRC = $(wildcard src/*.cpp)
 OBJ = $(patsubst src/%.cpp, src/%.o, $(SRC))
 
 ALG_SRC = $(wildcard src/*Match.cpp)
-ALG_OBJ = $(patsubst src/%.cpp, src/%.o, $(ALG_SRC))
+ALG_OBJ = $(patsubst src/%.cpp, obj/%.o, $(ALG_SRC))
 #src/%.o: src/%.cpp
 #	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
-src/%.o: src/%.cpp 
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 all: vis_pfm rms_error librs_demo centest
-rms_error: src/rms_error.o src/imio.o
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $? -o $@
-vis_pfm: src/vis_pfm.o src/imio.o
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $? -o $@
-librs_demo: src/rs_demo.o src/imio.o src/imshow.o $(ALG_OBJ)
+obj:
+	mkdir -p obj/
+obj/%.o: src/%.cpp | obj
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+rms_error: obj/rms_error.o obj/imio.o
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -o $@
+vis_pfm: obj/vis_pfm.o obj/imio.o
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -o $@
+librs_demo: obj/rs_demo.o obj/imio.o obj/imshow.o $(ALG_OBJ)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -lrealsense -o $@
-centest: src/Main.o src/imio.o src/imshow.o $(ALG_OBJ)
+centest: obj/Main.o obj/imio.o obj/imshow.o $(ALG_OBJ)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -o $@
 clean:
-	rm -f vis_pfm rms_error librs_demo centest src/*.o
+	rm -f vis_pfm rms_error librs_demo centest
+	rm -rf obj/

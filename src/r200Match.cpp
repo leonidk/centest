@@ -13,7 +13,7 @@ using namespace stereo;
 // Census Radius and Width
 #define C_R (3)
 #define C_W (2 * C_R + 1)
-
+#define DS (1)
 // sampling pattern
 // . X . X . X .
 // X . X . X . X
@@ -258,7 +258,7 @@ void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::
                 for (int i = -B_R; i <= B_R; i++) {
                     for (int j = -B_R; j <= B_R; j++) {
                         auto pl = censusLeft[(y + i) * width + (x + j)];
-                        auto pr = censusRight[(y + i) * width + (x + j - d)];
+                        auto pr = censusRight[(y + i) * width + (x + j - d - DS)];
 
                         cost += popcount(pl ^ pr);
                     }
@@ -309,7 +309,7 @@ void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::
             auto spR = (minLIdx > 0 && minLIdx < maxdisp - 1) ? subpixel(rL, rC, rR) : 0;
 
             // disparity computation
-            uint16_t res = (uint16_t)std::round((minLIdx + spL) * muldisp);
+            uint16_t res = (uint16_t)std::round((std::max(0,minLIdx) - DS + spL) * muldisp);
             uint16_t bitMask = 0;
 
             // left-right threshold

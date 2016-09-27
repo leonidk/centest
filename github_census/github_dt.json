@@ -22,9 +22,11 @@
             "dt_space": 10.0,
             "dt_range": 90.0
             },
+    "supports_cmd": true,
     "supports_batch": false,
     "setup": [],
-    "command": "centest.exe",
+    "command": "centest",
+
     "left_mono": "./middlebury/motorcycle/left/mono.png",
     "left_rgb": "./middlebury/motorcycle/left/rgb.png",
     "right_mono": "./middlebury/motorcycle/right/mono.png",
@@ -33,5 +35,7 @@
     "output_conf": "./conf.pfm",
     "maxint": 65535,
     "minint": 255,
-    "maxdisp": 70
+    "maxdisp": 70,
+
+    "costs": "./costs.pmm"
 }

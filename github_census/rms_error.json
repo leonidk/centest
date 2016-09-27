@@ -1,0 +1,21 @@
+{
+    "description": "basic rms error metrics",
+    "config": { },
+    "supports_batch": false,
+    "setup": [],
+    "command": "rms_error",
+    "prints_output": false,
+
+    "left_mono": "./middlebury/motorcycle/left/mono.png",
+    "left_rgb": "./middlebury/motorcycle/left/rgb.png",
+    "right_mono": "./middlebury/motorcycle/right/mono.png",
+    "right_rgb": "./middlebury/motorcycle/right/rgb.png",
+    "gt_disp": "./middlebury/motorcycle/gt/gt.pfm",
+    "gt_mask": "./middlebury/motorcycle/gt/mask.pfm",
+    "input_disp": "./out.pfm",
+    "input_conf": "./conf.pfm",
+    "output": "rms_out.json",
+    "maxint": 65535,
+    "minint": 255,
+    "maxdisp": 70
+}

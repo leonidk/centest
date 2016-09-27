@@ -14,7 +14,7 @@ using namespace stereo;
 
 // Left-Right Threshold
 #define LRT (2)
-
+#define DS (1)
 // y,x
 const int samples[] = {
     -3, -2,

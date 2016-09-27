@@ -73,7 +73,9 @@ int main(int argc, char* argv[])
 		doc = json::parse(str);
 	}
 	else {
-		return 1;
+		std::vector<std::string> args(argv + 1, argv + argc);
+        auto str = accumulate(begin(args), end(args), std::string());
+        doc = json::parse(str);
 	}
 	std::string leftFile = doc["left_rgb"].string();
     std::string rightFile = doc["right_rgb"].string();
