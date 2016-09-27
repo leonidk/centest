@@ -41,8 +41,12 @@ ifneq ($(LIBS),)
 endif
 
 # Combine compiler and linker flags
- export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(RCOMPILE_FLAGS)
-# export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(DCOMPILE_FLAGS)
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+	export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(DCOMPILE_FLAGS)
+else
+	export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(RCOMPILE_FLAGS)
+endif
 
 SRC = $(wildcard src/*.cpp)
 OBJ = $(patsubst src/%.cpp, src/%.o, $(SRC))
