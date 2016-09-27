@@ -1,9 +1,11 @@
+#!/usr/bin/env python
 import json
 import os, sys
 from PIL import Image
 import numpy as np
 from subprocess import call
 import re, shutil
+import platform
 def load_pfm(fname):
     color = None
     width = None
@@ -14,7 +16,7 @@ def load_pfm(fname):
     file = open(fname,'rU')
     header = file.readline().rstrip()
     if header == 'PF':
-        color = True    
+        color = True
     elif header == 'Pf':
         color = False
     else:
@@ -38,7 +40,7 @@ def load_pfm(fname):
     return np.flipud(np.reshape(data, shape)), scale
 
 def save_pfm(fname, image, scale=1):
-    file = open(fname, 'wb') 
+    file = open(fname, 'wb')
     color = None
 
     if image.dtype.name != 'float32':
@@ -101,10 +103,16 @@ for folder in os.listdir(basePath):
     gt_mask = nfolder + '/gt/mask.pfm'
     gt = nfolder + '/gt/gt.pfm'
 
-    call(['magick','-define','png:bit-depth=16',basePath + folder + '/im0.png',lft_rgb],creationflags=0x08000000)
-    call(['magick','-define','png:bit-depth=16',basePath + folder + '/im1.png',rgt_rgb],creationflags=0x08000000)
-    call(['magick','-define','png:bit-depth=16',basePath + folder + '/im0.png','-colorspace','Gray',lft_mono],creationflags=0x08000000)
-    call(['magick','-define','png:bit-depth=16',basePath + folder + '/im1.png','-colorspace','Gray',rgt_mono],creationflags=0x08000000)
+    if platform.system() == 'Windows':
+        flags=0x08000000
+        script='magick'
+    else:
+        flags = 0
+        script = 'convert'
+    call([script,'-define','png:bit-depth=16',basePath + folder + '/im0.png',lft_rgb],creationflags=flags)
+    call([script,'-define','png:bit-depth=16',basePath + folder + '/im1.png',rgt_rgb],creationflags=flags)
+    call([script,'-define','png:bit-depth=16',basePath + folder + '/im0.png','-colorspace','Gray',lft_mono],creationflags=flags)
+    call([script,'-define','png:bit-depth=16',basePath + folder + '/im1.png','-colorspace','Gray',rgt_mono],creationflags=flags)
 
     data = {'left' : {'mono' : lft_mono, 'rgb': lft_rgb},'right' : {'mono' : rgt_mono, 'rgb': rgt_rgb}}
 
@@ -112,7 +120,7 @@ for folder in os.listdir(basePath):
         calib=myfile.read().split('\n')
     calib = {x[0]:x[1] for x in [x.split('=') for x in calib[:-1]]} # trust leo
     cam0 = calib['cam0'].strip('[]').replace(';','').replace(' ',',').split(',') #see above
-    
+
     o_gt = load_pfm(basePath + folder + '/disp0GT.pfm')
     save_pfm(gt_mask,(o_gt[0] != np.inf).astype(np.float32))
     shutil.copy(basePath + folder + '/disp0GT.pfm',gt)

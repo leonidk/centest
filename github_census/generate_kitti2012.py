@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import json
 import os, sys
 from PIL import Image
@@ -14,7 +16,7 @@ def load_pfm(fname):
     file = open(fname,'rU')
     header = file.readline().rstrip()
     if header == 'PF':
-        color = True    
+        color = True
     elif header == 'Pf':
         color = False
     else:
@@ -38,7 +40,7 @@ def load_pfm(fname):
     return np.flipud(np.reshape(data, shape)), scale
 
 def save_pfm(fname, image, scale=1):
-    file = open(fname, 'wb') 
+    file = open(fname, 'wb')
     color = None
 
     if image.dtype.name != 'float32':
@@ -102,11 +104,19 @@ for filename in os.listdir(basePath + 'disp_noc/'):
     gt_mask = nfolder + '/gt/mask.pfm'
     gt = nfolder + '/gt/gt.pfm'
 
-    call(['magick','-define','png:bit-depth=16',basePath + 'image_0/' + filename,'-define','png:format=png48',lft_rgb],creationflags=0x08000000)
-    call(['magick','-define','png:bit-depth=16',basePath + 'image_1/' + filename,'-define','png:format=png48',rgt_rgb],creationflags=0x08000000)
-    call(['magick','-define','png:bit-depth=16',basePath + 'image_0/' + filename,lft_mono],creationflags=0x08000000)
-    call(['magick','-define','png:bit-depth=16',basePath + 'image_1/' + filename,rgt_mono],creationflags=0x08000000)
-    
+
+    if platform.system() == 'Windows':
+        flags=0x08000000
+        script='magick'
+    else:
+        flags = 0
+        script = 'convert'
+
+    call([script,'-define','png:bit-depth=16',basePath + 'image_0/' + filename,'-define','png:format=png48',lft_rgb],creationflags=flags)
+    call([script,'-define','png:bit-depth=16',basePath + 'image_1/' + filename,'-define','png:format=png48',rgt_rgb],creationflags=flags)
+    call([script,'-define','png:bit-depth=16',basePath + 'image_0/' + filename,lft_mono],creationflags=flags)
+    call([script,'-define','png:bit-depth=16',basePath + 'image_1/' + filename,rgt_mono],creationflags=flags)
+
     data = {'left' : {'mono' : lft_mono, 'rgb': lft_rgb},'right' : {'mono' : rgt_mono, 'rgb': rgt_rgb}}
     with open(basePath + 'calib/'+ lcfolder + '.txt','r') as myfile:
         calib=myfile.read().split('\n')

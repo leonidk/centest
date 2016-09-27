@@ -9,7 +9,7 @@ LIBS = glfw3
 COMPILE_FLAGS = -std=c++14  
 #COMPILE_FLAGS = -std=c++11 -g -w  
 # Additional release-specific flags
-RCOMPILE_FLAGS = -D NDEBUG -march=native -Ofast 
+RCOMPILE_FLAGS = -D NDEBUG -march=native -Ofast -fopenmp 
 # Additional debug-specific flags
 DCOMPILE_FLAGS = -D DEBUG -g
 # Add additional include paths
