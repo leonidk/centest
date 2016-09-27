@@ -99,15 +99,15 @@ int main(int argc, char* argv[])
 	if (doc["config"]["algorithm"].string() == "r200") {
 		stereo::R200Match::alg_config cfg;
 		from_json(cfg, doc["config"]);
-		cm = std::make_unique<stereo::R200Match>(left.width, left.height,doc["maxdisp"].number<int>(),cfg);
+		cm = std::make_unique<stereo::R200Match>(left.width, left.height,doc["maxdisp"].number<int>()+1,cfg);
 		scale_disp = (float)cfg.dispmul;
 	} else if (doc["config"]["algorithm"].string() == "sgbm") {
 		stereo::sgbmMatch::alg_config cfg;
 		from_json(cfg, doc["config"]);
-		cm = std::make_unique<stereo::sgbmMatch>(left.width, left.height, doc["maxdisp"].number<int>(), cfg);
+		cm = std::make_unique<stereo::sgbmMatch>(left.width, left.height, doc["maxdisp"].number<int>()+1, cfg);
 		scale_disp = (float)cfg.dispmul;
 	} else {
-		cm = std::make_unique<stereo::R200Match>(left.width, left.height, doc["maxdisp"].number<int>(), (int)scale_disp);
+		cm = std::make_unique<stereo::R200Match>(left.width, left.height, doc["maxdisp"].number<int>()+1, (int)scale_disp);
 	}
     auto startTime = std::chrono::steady_clock::now();
 	auto res = cm->match(left_g, right_g);

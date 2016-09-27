@@ -19,6 +19,7 @@ using namespace stereo;
 // . X . X . X .
 #define C_R (3)
 #define C_W (2 * C_R + 1)
+#define DS (1)
 // y,x
 const int samples[] = {
     -3, -2,
@@ -121,7 +122,7 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
         auto prevVal = 0;
         std::fill(costs.begin(),costs.end(), config.score_max);
         if (config.use_blf) {
-             //#pragma omp parallel for
+            #pragma omp parallel for
             for (int x = config.box_radius; x < width - config.box_radius; x++) {
                 auto lb = std::max(config.box_radius, x - maxdisp);
                 auto search_limit = x - lb;
@@ -142,10 +143,10 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                     for (int i = -config.box_radius; i <= config.box_radius; i++) {
                         for (int j = -config.box_radius; j <= config.box_radius; j++) {
                             auto pl = censusLeft[(y + i) * width + (x + j)];
-                            auto pr = censusRight[(y + i) * width + (x + j - d)];
+                            auto pr = censusRight[(y + i) * width + (x + j - (d-DS))];
 
                             auto al = lptr[(y + i) * width + (x + j)];
-                            auto ar = rptr[(y + i) * width + (x + j - d)];
+                            auto ar = rptr[(y + i) * width + (x + j - (d-DS))];
 
                             cost += bilateralWeights[(i + config.box_radius) * box_width + (j + config.box_radius)] * (config.cost_ham * popcount(pl ^ pr) + config.cost_abs * abs(al - ar));
                         }
@@ -154,7 +155,7 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                 }
             }
         } else {
-             //#pragma omp parallel for
+            #pragma omp parallel for
             for (int x = config.box_radius; x < width - config.box_radius; x++) {
                 auto lb = std::max(config.box_radius, x - maxdisp);
                 auto search_limit = x - lb;
@@ -163,10 +164,10 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                     for (int i = -config.box_radius; i <= config.box_radius; i++) {
                         for (int j = -config.box_radius; j <= config.box_radius; j++) {
                             auto pl = censusLeft[(y + i) * width + (x + j)];
-                            auto pr = censusRight[(y + i) * width + (x + j - d)];
+                            auto pr = censusRight[(y + i) * width + (x + j - (d-DS))];
 
                             auto al = lptr[(y + i) * width + (x + j)];
-                            auto ar = rptr[(y + i) * width + (x + j - d)];
+                            auto ar = rptr[(y + i) * width + (x + j - (d-DS))];
 
                             cost += config.cost_ham * popcount(pl ^ pr) + config.cost_abs * abs(al - ar);
                         }
@@ -374,15 +375,15 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
             auto nL = costsSummed[x * maxdisp + std::max(minLIdx - 1, 0)];
             auto nC = costsSummed[x * maxdisp + minLIdx];
             auto nR = costsSummed[x * maxdisp + std::min(minLIdx + 1, maxdisp - 1)];
-            auto spL = (minLIdx > 0 && minLIdx < maxdisp - 1) ? subpixel((float)nL, (float)nC, (float)nR) : 0;
+            auto spL = (minLIdx < maxdisp - 1) ? subpixel((float)nL, (float)nC, (float)nR) : 0;
             // subpixel right
             auto rL = costsSummed[(x - 1) * maxdisp + std::max(minLIdx - 1, 0)];
             auto rC = costsSummed[(x)*maxdisp + minLIdx];
             auto rR = costsSummed[(x + 1) * maxdisp + std::min(minLIdx + 1, maxdisp - 1)];
-            auto spR = (minLIdx > 0 && minLIdx < maxdisp - 1) ? subpixel((float)rL, (float)rC, (float)rR) : 0;
+            auto spR = (minLIdx < maxdisp - 1) ? subpixel((float)rL, (float)rC, (float)rR) : 0;
 
             // disparity computation
-            uint16_t res = (uint16_t)std::round((minLIdx + spL) * muldisp);
+            uint16_t res = (uint16_t)std::round((std::max(0,minLIdx-DS) + spL) * muldisp);
 			uint16_t bitMask = 0;
 
             // left-right threshold

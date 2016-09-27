@@ -51,6 +51,34 @@ int main(int argc, char* argv[])
 	auto conf = img::imread<float,1>(doc["input_conf"].string().c_str());
 
 	auto gt_disp = img::imread<float,1>(doc["gt_disp"].string().c_str());
-	auto gt_mask = img::imread<float,1>(doc["gt_conf"].string().c_str());
+	auto gt_mask = img::imread<float,1>(doc["gt_mask"].string().c_str());
+    std::vector<std::map<std::string,json::value>> results;
+
+    // sweep robust loss
+    for(const auto & thresh : {0.5f, 0.75f, 1.0f, 2.0f, 3.0f}) {
+        double err = 0.0;
+        double count = 0.0;
+
+		double err_n = 0.0;
+		double count_n = 0.0;
+        for(int i=0; i < disp.size(); i++) {
+            auto isValid = gt_mask(i) > 0.5 ? true : false;
+            if(!isValid)
+                continue;
+            err += std::min(thresh,std::abs(gt_disp(i) - disp(i)));
+            count += 1;
+			
+
+            auto thinksValid = conf(i) > 0.5 ? true : false;
+			if(!thinksValid)
+				continue;
+			
+            err_n += std::min(thresh,std::abs(gt_disp(i) - disp(i)));
+            count_n += 1;
+		}
+        err_n /= count_n ? count_n : 1;
+        err /= count ? count : 1;
+        printf("%.2f %.4f %.4f\n",thresh,err,err_n);
+	}
     return 0;
 }
