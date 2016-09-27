@@ -48,6 +48,8 @@ namespace img {
         struct arr_d {
             void operator()(T const* p) { delete[] p; }
         };
+        int size() const {return width*height;}
+        int sizebytes() const {return width*height*C*sizeof(T);}
         T& operator()(int i) { return ptr[i]; }
         T& operator()(int y, int x) { return ptr[y*width + x]; }
         T& operator()(int y, int x, int c) { return ptr[C*(y*width + x) + c]; }

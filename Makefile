@@ -51,7 +51,7 @@ ALG_SRC = $(wildcard src/*Match.cpp)
 ALG_OBJ = $(patsubst src/%.cpp, src/%.o, $(ALG_SRC))
 #src/%.o: src/%.cpp
 #	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
-src/%.o: src/%.cpp src/%.h
+src/%.o: src/%.cpp 
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 all: vis_pfm rms_error librs_demo centest
 rms_error: src/rms_error.o src/imio.o
