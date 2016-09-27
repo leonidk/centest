@@ -12,8 +12,19 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <iomanip>
+#include <fstream>
 #define JSON_H_IMPLEMENTATION
 #include "json.h"
+template <typename T>
+std::string to_string_with_precision(const T a_value, const int n = 6)
+{
+    std::ostringstream out;
+    out << std::setprecision(n) << a_value;
+    return out.str();
+}
+
+std::string pretty_print(const json::value & v) { std::ostringstream ss; ss << tabbed(v, 4); return ss.str(); }
 
 int main(int argc, char* argv[])
 {
@@ -52,7 +63,7 @@ int main(int argc, char* argv[])
 
 	auto gt_disp = img::imread<float,1>(doc["gt_disp"].string().c_str());
 	auto gt_mask = img::imread<float,1>(doc["gt_mask"].string().c_str());
-    std::vector<std::map<std::string,json::value>> results;
+    json::array results;
 
     // sweep robust loss
     for(const auto & thresh : {0.5f, 0.75f, 1.0f, 2.0f, 3.0f}) {
@@ -78,7 +89,56 @@ int main(int argc, char* argv[])
 		}
         err_n /= count_n ? count_n : 1;
         err /= count ? count : 1;
-        printf("%.2f %.4f %.4f\n",thresh,err,err_n);
+
+        json::object res;
+        res["name"] = std::string("err_") +to_string_with_precision(thresh,3) ;
+        res["result"] = err;
+        res["threshold"] = thresh;
+        res["description"] = json::value{std::string("Robust loss over all pixels with t=") + std::to_string(thresh)};
+        results.push_back(res);
+        
+        res["name"] = std::string("errn_") +to_string_with_precision(thresh,3) ;
+        res["result"] = err_n;
+        res["threshold"] = thresh;
+        res["description"] = json::value{std::string("Robust loss over valid pixels with t=") + std::to_string(thresh)};
+        results.push_back(res);
 	}
+
+    // sweep f# scores
+    for(const auto & beta : {0.25f, 0.5f, 1.0f, 2.0f, 4.0f}) 
+    {
+        double tp = 0.0f;
+        double fp = 0.0f;
+        double tn = 0.0f;
+        double fn = 0.0f;
+        for(int i=0; i < disp.size(); i++) {
+            auto isValid = gt_mask(i) > 0.5 ? true : false;
+            auto thinksValid = conf(i) > 0.5 ? true : false;
+			
+            if(isValid) {
+                if(thinksValid)
+                    tp++;
+                else
+                    fn++;
+            } else {
+                if(thinksValid)
+                    fp++;
+                else
+                    tn++;
+            }
+        }
+        auto b2 = (beta*beta);
+        auto b2p1 = (b2 + 1.0);
+        auto score = (b2p1*tp)/(b2p1*tp+b2*fn+fp);
+        json::object res;
+        res["name"] = std::string("f_") +to_string_with_precision(beta,3) ;
+        res["result"] = score;
+        res["beta"] = beta;
+        res["description"] = json::value{std::string("F score with B=") + std::to_string(beta)};
+        results.push_back(res);
+    }
+    std::cout << pretty_print(results);
+    std::ofstream outputfile(doc["output"].string());
+    outputfile << pretty_print(results);
     return 0;
 }

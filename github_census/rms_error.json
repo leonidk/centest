@@ -4,7 +4,7 @@
     "supports_batch": false,
     "setup": [],
     "command": "rms_error",
-    "prints_output": false,
+    "prints_output": true,
 
     "left_mono": "./middlebury/motorcycle/left/mono.png",
     "left_rgb": "./middlebury/motorcycle/left/rgb.png",
