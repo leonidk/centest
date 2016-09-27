@@ -11,7 +11,7 @@ COMPILE_FLAGS = -std=c++14
 # Additional release-specific flags
 RCOMPILE_FLAGS = -D NDEBUG -march=native -Ofast -fopenmp 
 # Additional debug-specific flags
-DCOMPILE_FLAGS = -D DEBUG -g
+DCOMPILE_FLAGS = -D DEBUG -g -Wall -Wunused-variable
 # Add additional include paths
 INCLUDES = -I src/
 # General linker settings
@@ -41,7 +41,7 @@ ifneq ($(LIBS),)
 endif
 
 # Combine compiler and linker flags
-export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(RCOMPILE_FLAGS)
+ export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(RCOMPILE_FLAGS)
 # export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(DCOMPILE_FLAGS)
 
 SRC = $(wildcard src/*.cpp)
