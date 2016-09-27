@@ -6,7 +6,10 @@ namespace stereo {
 class R200Match : public StereoMatch {
 public:
     using StereoMatch::match;
-	struct alg_config {
+    // Using the parameters from
+    // https://github.com/IntelRealSense/librealsense/blob/master/include/librealsense/rsutil.h
+
+    struct alg_config {
 		int dispmul = 4;
 		int box_radius = 3;
 		int left_right_int = 1;

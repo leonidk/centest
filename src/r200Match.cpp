@@ -4,17 +4,15 @@
 
 using namespace stereo;
 
-// Using the parameters from
-// https://github.com/IntelRealSense/librealsense/blob/master/include/librealsense/rsutil.h
-
-// Census Radius and Width
-#define C_R (3)
-#define C_W (2 * C_R + 1)
 #ifdef _WIN32
 #define popcount __popcnt
 #else
 #define popcount __builtin_popcount
 #endif
+
+// Census Radius and Width
+#define C_R (3)
+#define C_W (2 * C_R + 1)
 
 // sampling pattern
 // . X . X . X .

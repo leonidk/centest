@@ -44,14 +44,23 @@ endif
 export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(RCOMPILE_FLAGS)
 # export CXXFLAGS := $(CXXFLAGS) $(COMPILE_FLAGS) $(DCOMPILE_FLAGS)
 
+SRC = $(wildcard src/*.cpp)
+OBJ = $(patsubst src/%.cpp, src/%.o, $(SRC))
+
+ALG_SRC = $(wildcard src/*Match.cpp)
+ALG_OBJ = $(patsubst src/%.cpp, src/%.o, $(ALG_SRC))
+#src/%.o: src/%.cpp
+#	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+src/%.o: src/%.cpp src/%.h
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 all: vis_pfm rms_error librs_demo centest
-rms_error: src/rms_error.cpp src/imio.cpp
+rms_error: src/rms_error.o src/imio.o
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $? -o $@
-vis_pfm: src/vis_pfm.cpp src/imio.cpp
+vis_pfm: src/vis_pfm.o src/imio.o
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $? -o $@
-librs_demo: src/rs_demo.cpp src/imio.cpp src/imshow.cpp src/*Match.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $? -Iinclude -lGL -lglfw -lrealsense -o $@
-centest: src/Main.cpp src/imio.cpp src/imshow.cpp src/*Match.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $? -Iinclude -lGL -lglfw -o $@
+librs_demo: src/rs_demo.o src/imio.o src/imshow.o $(ALG_OBJ)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -lrealsense -o $@
+centest: src/Main.o src/imio.o src/imshow.o $(ALG_OBJ)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -o $@
 clean:
-	rm -f vis_pfm rms_error librs_demo centest
+	rm -f vis_pfm rms_error librs_demo centest src/*.o
