@@ -4,7 +4,7 @@ import os, sys
 from PIL import Image
 import numpy as np
 from subprocess import call
-import re, shutil
+import re, shutil, os
 import platform
 def load_pfm(fname):
     color = None
@@ -84,24 +84,25 @@ config['maxint'] = {}
 config['minint'] = {}
 
 basePath = './MiddEval3/trainingQ/'
+targetPath = 'middlebury'
 def check_and_make_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
-check_and_make_dir('./middlebury')
+check_and_make_dir(targetPath)
 for folder in os.listdir(basePath):
     lcfolder = folder.lower()
-    nfolder = './middlebury/' + lcfolder
+    nfolder = os.path.join(targetPath,lcfolder)
     check_and_make_dir(nfolder)
     check_and_make_dir(nfolder +'/left')
     check_and_make_dir(nfolder + '/right')
     check_and_make_dir(nfolder + '/gt')
 
-    lft_rgb = nfolder + '/left/rgb.png'
-    lft_mono = nfolder + '/left/mono.png'
-    rgt_rgb = nfolder + '/right/rgb.png'
-    rgt_mono = nfolder + '/right/mono.png'
-    gt_mask = nfolder + '/gt/mask.pfm'
-    gt = nfolder + '/gt/gt.pfm'
+    lft_rgb = os.path.join(nfolder,'left','rgb.png')
+    lft_mono = os.path.join(nfolder,'left','mono.png')
+    rgt_rgb = os.path.join(nfolder,'right','rgb.png')
+    rgt_mono = os.path.join(nfolder,'right','mono.png')
+    gt_mask = os.path.join(nfolder,'gt','mask.pfm')
+    gt = os.path.join(nfolder,'gt','gt.pfm')
 
     if platform.system() == 'Windows':
         flags=0x08000000
@@ -109,21 +110,21 @@ for folder in os.listdir(basePath):
     else:
         flags = 0
         script = 'convert'
-    call([script,'-define','png:bit-depth=16',basePath + folder + '/im0.png',lft_rgb],creationflags=flags)
-    call([script,'-define','png:bit-depth=16',basePath + folder + '/im1.png',rgt_rgb],creationflags=flags)
-    call([script,'-define','png:bit-depth=16',basePath + folder + '/im0.png','-colorspace','Gray',lft_mono],creationflags=flags)
-    call([script,'-define','png:bit-depth=16',basePath + folder + '/im1.png','-colorspace','Gray',rgt_mono],creationflags=flags)
+    call([script,'-define','png:bit-depth=16',os.path.join(basePath,folder,'im0.png'),lft_rgb],creationflags=flags)
+    call([script,'-define','png:bit-depth=16',os.path.join(basePath,folder,'im1.png'),rgt_rgb],creationflags=flags)
+    call([script,'-define','png:bit-depth=16',os.path.join(basePath,folder,'im0.png'),'-colorspace','Gray',lft_mono],creationflags=flags)
+    call([script,'-define','png:bit-depth=16',os.path.join(basePath,folder,'im1.png'),'-colorspace','Gray',rgt_mono],creationflags=flags)
 
     data = {'left' : {'mono' : lft_mono, 'rgb': lft_rgb},'right' : {'mono' : rgt_mono, 'rgb': rgt_rgb}}
 
-    with open(basePath + folder + '/calib.txt','r') as myfile:
+    with open(os.path.join(basePath,folder,'calib.txt'),'r') as myfile:
         calib=myfile.read().split('\n')
     calib = {x[0]:x[1] for x in [x.split('=') for x in calib[:-1]]} # trust leo
     cam0 = calib['cam0'].strip('[]').replace(';','').replace(' ',',').split(',') #see above
 
-    o_gt = load_pfm(basePath + folder + '/disp0GT.pfm')
+    o_gt = load_pfm(os.path.join(basePath,folder,'disp0GT.pfm'))
     save_pfm(gt_mask,(o_gt[0] != np.inf).astype(np.float32))
-    shutil.copy(basePath + folder + '/disp0GT.pfm',gt)
+    shutil.copy(os.path.join(basePath,folder,'disp0GT.pfm'),gt)
     config['names'].append(lcfolder)
     config['data'][lcfolder] = data
     config['maxdisp'][lcfolder] = int(calib['ndisp'])
