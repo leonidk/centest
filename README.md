@@ -32,6 +32,7 @@ As such, the code has basically no comments and poor interfaces for most of it's
 * The conversion routine is on github_census/generate_middlebury.py. This is a python script that requires Pillow and Imagemagick.
 * This program also supports passing valid json on the command line, instead of a file. 
 * Output results are in the current working directory, to an 32-bit float disparity image PFM, and a confidence map in 32-bit floating point. 
+* To visualize the pfm files, a vis_pfm script is provided `./vis_pfm depth.pfm [conf.pfm]` with an optional conf.pfm argument, which generates an out.png file the execution directory with a histogram colored depthmap.
 
 ## License
 Mozilla Public License 2.0. More information is available on the [Wikpedia article on MPL](https://en.wikipedia.org/wiki/Mozilla_Public_License) or [MPL's official FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/). 
