@@ -27,7 +27,7 @@ As such, the code has basically no comments and poor interfaces for most of it's
 
 ## Running
 * Run via `./centest <json>`
-* An example would be `./centest github_census/github_census.json
+* An example would be `./centest github_census/github_census.json`
 * The example code expects to have a converted version of [Middlebury's v3 dataset](http://vision.middlebury.edu/stereo/submit3/)
 * The conversion routine is on github_census/generate_middlebury.py. This is a python script that requires Pillow and Imagemagick.
 * This program also supports passing valid json on the command line, instead of a file. 
