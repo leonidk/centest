@@ -1,4 +1,5 @@
 {
+    "type": "algorithm",
     "description": "open-source r200 knockoff",
     "config": { 
             "dispmul": 4,

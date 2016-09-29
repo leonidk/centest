@@ -1,4 +1,5 @@
 {
+    "type": "algorithm",
     "description": "open-source r200 knockoff with causal semiglobal matching",
     "config": { 
             "dispmul": 4,

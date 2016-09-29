@@ -1,4 +1,5 @@
 {
+    "type": "algorithm",
     "description": "open-source r200 knockoff with domain transform cost filtering based on the left image",
     "config": { 
             "dispmul": 4,

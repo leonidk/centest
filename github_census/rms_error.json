@@ -1,4 +1,5 @@
 {
+    "type": "metric",
     "description": "basic rms error metrics",
     "config": { },
     "supports_batch": false,
