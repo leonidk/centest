@@ -30,8 +30,9 @@
     "supports_cmd": true,
     "supports_batch": false,
     "setup": [],
-    "command": "centest.exe",
+    "command": "../centest",
     "dir": ".",
+    "dependent_files": [],
     
     "left_mono": "./middlebury/motorcycle/left/mono.png",
     "left_rgb": "./middlebury/motorcycle/left/rgb.png",

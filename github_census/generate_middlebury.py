@@ -20,9 +20,9 @@ for folder in os.listdir(basePath):
     lcfolder = folder.lower()
     nfolder = os.path.join(targetPath,lcfolder)
     check_and_make_dir(nfolder)
-    check_and_make_dir(nfolder +'/left')
-    check_and_make_dir(nfolder + '/right')
-    check_and_make_dir(nfolder + '/gt')
+    check_and_make_dir(os.path.join(nfolder,'left'))
+    check_and_make_dir(os.path.join(nfolder,'right'))
+    check_and_make_dir(os.path.join(nfolder,'gt'))
 
     lft_rgb = os.path.join(nfolder,'left','rgb.png')
     lft_mono = os.path.join(nfolder,'left','mono.png')

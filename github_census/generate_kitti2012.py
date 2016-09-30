@@ -13,9 +13,7 @@ config['description'] = "all of KITTI 2012"
 
 basePath = './data_stereo_flow/training/'
 targetPath = 'kitti2012'
-def check_and_make_dir(directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+
 check_and_make_dir(targetPath)
 for filename in os.listdir(os.path.join(basePath,'disp_noc')):
     lcfolder =  filename[:-7]

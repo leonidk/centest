@@ -1,5 +1,67 @@
 import re, shutil, sys, os
 import numpy as np
+import json
+import hashlib
+from os.path import normpath, walk, isdir, isfile, dirname, basename, \
+    exists as path_exists, join as path_join
+from contextlib import contextmanager
+import os
+
+@contextmanager
+def cd(newdir):
+    prevdir = os.getcwd()
+    os.chdir(os.path.expanduser(newdir))
+    try:
+        yield
+    finally:
+        os.chdir(prevdir)
+def path_checksum(paths):
+    """
+    Recursively calculates a checksum representing the contents of all files
+    found with a sequence of file and/or directory paths.
+
+    """
+    if not hasattr(paths, '__iter__'):
+        raise TypeError('sequence or iterable expected not %r!' % type(paths))
+
+    def _update_checksum(checksum, dirname, filenames):
+        for filename in sorted(filenames):
+            path = path_join(dirname, filename)
+            if isfile(path):
+                #print path
+                fh = open(path, 'rb')
+                while 1:
+                    buf = fh.read(4096)
+                    if not buf : break
+                    checksum.update(buf)
+                fh.close()
+
+    chksum = hashlib.sha1()
+
+    for path in sorted([normpath(f) for f in paths]):
+        if path_exists(path):
+            if isdir(path):
+                walk(path, _update_checksum, chksum)
+            elif isfile(path):
+                _update_checksum(chksum, dirname(path), basename(path))
+
+    return chksum.hexdigest()
+
+
+def loadFiles(folder,t):
+    res = []
+    for f in os.listdir(folder):
+        jd = os.path.join(folder,f)
+        try:
+            with open(jd) as fp:
+                d = json.load(fp)
+                if d['type'] == t:
+                    base, ext = os.path.splitext(f)
+                    d['name'] = base
+                    res.append(d)
+        except:
+            pass
+    return res
 
 def load_pfm(fname):
     color = None
@@ -65,23 +127,23 @@ def check_and_make_dir(directory):
         os.makedirs(directory)
 
 def get_default_dataset_config():
-	config = {}
+    config = {}
 
-	config['description'] = ''
-	config['names'] = []
-	config['data'] = {}
-	config['maxdisp'] = {}
-	config['fx'] = {}
-	config['fy'] = {}
-	config['px'] = {}
-	config['py'] = {}
-	config['dpx'] = {}
-	config['gt'] = {}
-	config['gt_mask'] = {}
-	config['baseline'] = {}
-	config['width'] = {}
-	config['height'] = {}
-	config['maxint'] = {}
-	config['minint'] = {}
-	config['type'] = 'dataset'
-	return config
+    config['description'] = ''
+    config['names'] = []
+    config['data'] = {}
+    config['maxdisp'] = {}
+    config['fx'] = {}
+    config['fy'] = {}
+    config['px'] = {}
+    config['py'] = {}
+    config['dpx'] = {}
+    config['gt'] = {}
+    config['gt_mask'] = {}
+    config['baseline'] = {}
+    config['width'] = {}
+    config['height'] = {}
+    config['maxint'] = {}
+    config['minint'] = {}
+    config['type'] = 'dataset'
+    return config

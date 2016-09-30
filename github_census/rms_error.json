@@ -4,7 +4,7 @@
     "config": { },
     "supports_batch": false,
     "setup": [],
-    "command": "rms_error",
+    "command": "../rms_error",
     "prints_output": true,
 
     "left_mono": "./middlebury/motorcycle/left/mono.png",
