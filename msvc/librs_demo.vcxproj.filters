@@ -9,6 +9,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="$(LIBRS_ROOT)/bin/x64/realsense.dll" />
+    <None Include="$(LIBRS_ROOT)/bin/Win32/realsense.dll" />
   </ItemGroup>
 </Project>

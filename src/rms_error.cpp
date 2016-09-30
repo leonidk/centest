@@ -14,6 +14,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <numeric>
 #define JSON_H_IMPLEMENTATION
 #include "json.h"
 template <typename T>
@@ -39,7 +40,7 @@ int main(int argc, char* argv[])
     }
     else {
         std::vector<std::string> args(argv + 1, argv + argc);
-        auto str = accumulate(begin(args), end(args), std::string());
+        auto str = std::accumulate(begin(args), end(args), std::string());
         doc = json::parse(str);
 	}
 	std::string leftFile = doc["left_rgb"].string();
