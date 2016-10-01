@@ -43,7 +43,7 @@ class DTFlagsTuner(MeasurementInterface):
         metric_names = rz[0].keys()
         rzz = {m: np.mean([y[m]['result'] for y in rz]) for m in metric_names}
         short_results[alg] = rzz
-    return Result(time=short_results['opt']['err_3'])
+    return Result(time=short_results['opt']['err_3']*100.0)
 
   def save_final_config(self, configuration):
     print "Optimal block size written to mmm_final_config.json:", configuration.data
