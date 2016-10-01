@@ -10,6 +10,7 @@ from opentuner import ConfigurationManipulator
 from opentuner import IntegerParameter
 from opentuner import FloatParameter
 from opentuner import LogFloatParameter
+from opentuner import LogIntegerParameter
 from opentuner import MeasurementInterface
 from opentuner import Result
 import run_all
@@ -20,15 +21,21 @@ class DTFlagsTuner(MeasurementInterface):
   def manipulator(self):
     manipulator = ConfigurationManipulator()
     manipulator.add_parameter(
-      FloatParameter('dt_space', 5, 15))
+      LogIntegerParameter('p1', 0, 5000))
     manipulator.add_parameter(
-      LogFloatParameter('dt_range', 16, 128 ))
+      LogIntegerParameter('p2', 0, 15000))
+    manipulator.add_parameter(
+      IntegerParameter('cost_ham', 3, 9))
+    manipulator.add_parameter(
+      IntegerParameter('cost_abs', 0, 3))
+    manipulator.add_parameter(
+      IntegerParameter('box_radius', 0, 3))
     return manipulator
 
   def run(self, desired_result, input, limit):
     cfg = desired_result.configuration.data
 
-    with open('github_dt.json') as fp:
+    with open('github_sgbm.json') as fp:
         alg_cfg = json.load(fp)
     alg_cfg['config'].update(cfg)
     with open('opt.json','w') as fp:

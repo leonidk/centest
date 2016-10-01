@@ -20,8 +20,8 @@
             "domain_transform": true,
             "dt_scale": 49,
             "dt_iter": 3,
-            "dt_space": 10.0,
-            "dt_range": 90.0
+            "dt_space": 11.25,
+            "dt_range": 58.15
             },
     "supports_cmd": true,
     "supports_batch": false,
