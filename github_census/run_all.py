@@ -6,7 +6,7 @@ from collections import defaultdict
 from util import *
 from subprocess import call,check_output
 import copy
-
+import numpy as np
 def extract_fields(dataset,name,out_dir):
     data = {k: v[name] for k,v in dataset.iteritems() if type(v) == type({})}
     data["left_mono"] = data["data"]["left"]["mono"]
@@ -34,6 +34,7 @@ def run_alg(dataset,algorithm,out_dir):
             call([algorithm['command'],cfg_path])
 
 saved_file = 'finished_results.json'
+metric_results = 'metric_results.json'
 dataset_dir = '.'
 metrics_dir = '.'
 algs_dir = '.'
@@ -53,10 +54,8 @@ check_and_make_dir(out_dir)
 
 results = {}
 for algorithm in algorithms:
-    if algorithm['name'] not in results:
-        results[algorithm['name']] = {}
+    results[algorithm['name']] = {}
     for dataset in datasets:
-        #unique_name = '_'.join([dataset['name'],algorithm['name']])
         unique_out = os.path.join(out_dir,algorithm['name'],dataset['name'])
         unique_exists = os.path.exists(unique_out)
         check_and_make_dir(unique_out)
@@ -68,9 +67,11 @@ for algorithm in algorithms:
             run_alg(dataset,algorithm,unique_out)
             saved[unique_out] = hashkey
             print unique_out,hashkey
-        for metric in metrics:
-            for name in dataset['names']:
-                data = extract_fields(dataset,name,unique_out)
+        result = {}
+        for name in dataset['names']:
+            data = extract_fields(dataset,name,unique_out)
+            result[name] = {}
+            for metric in metrics:
                 metric.update(data)
                 metric['output'] = ''
 
@@ -78,13 +79,36 @@ for algorithm in algorithms:
                 #    json.dump(metric,fp)
                 #print metric_cfg_path, name, unique_out
                 res = check_output([metric['command'],json.dumps(metric)])
-                print res#json.dumps(metric, sort_keys=True,indent=4, separators=(',', ': '))
+                resn = json.loads(res)
+                result[name].update(json.loads(res))
+                #print res#json.dumps(metric, sort_keys=True,indent=4, separators=(',', ': '))
                 #with open(metric['output'],'r') as fp:
                 #    res = json.load(fp)
                 #if name in results[unique_name]:
                 #    results[unique_name][name].update(res)
                 #else:
                 #    results[unique_name][name] = res
-print results
+        unique_name = '_'.join([dataset['name'],algorithm['name']])
+        results[algorithm['name']][dataset['name']] = result
+short_results = {}
+for alg,ds in results.iteritems():
+    rz = []
+    for dsn,de in ds.iteritems():
+        for den,res in de.iteritems():
+            nd = {k:v for k,v in res.iteritems()}
+            rz.append(nd)
+            #metric_names = res.keys()
+            #metric_values = [res[x]['result'] for x in metric_names]
+            #for mn, mr in res.iteritems():
+            #    print mr['result']
+
+    metric_names = rz[0].keys()
+    rzz = {m: np.mean([y[m]['result'] for y in rz]) for m in metric_names}
+    short_results[alg] = rzz
 with open(saved_file,'w') as fp:
     json.dump(saved,fp)
+with open(metric_results,'w') as fp:
+    json.dump(results,fp)
+
+print json.dumps(short_results, sort_keys=True,indent=4, separators=(',', ': '))
+

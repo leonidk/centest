@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 
 	auto gt_disp = img::imread<float,1>(doc["gt"].string().c_str());
 	auto gt_mask = img::imread<float,1>(doc["gt_mask"].string().c_str());
-    json::array results;
+    json::object results;
 
     // sweep robust loss
     for(const auto & thresh : {0.5f, 0.75f, 1.0f, 2.0f, 3.0f}) {
@@ -96,13 +96,13 @@ int main(int argc, char* argv[])
         res["result"] = err;
         res["threshold"] = thresh;
         res["description"] = json::value{std::string("Robust loss over all pixels with t=") + std::to_string(thresh)};
-        results.push_back(res);
+        results[res["name"].string()] = res;
         
         res["name"] = std::string("errn_") +to_string_with_precision(thresh,3) ;
         res["result"] = err_n;
         res["threshold"] = thresh;
         res["description"] = json::value{std::string("Robust loss over valid pixels with t=") + std::to_string(thresh)};
-        results.push_back(res);
+        results[res["name"].string()] = res;
 	}
 
     // sweep f# scores
@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
         res["result"] = score;
         res["beta"] = beta;
         res["description"] = json::value{std::string("F score with B=") + std::to_string(beta)};
-        results.push_back(res);
+        results[res["name"].string()] = res;
     }
     std::cout << pretty_print(results);
     //std::ofstream outputfile(doc["output"].string());
