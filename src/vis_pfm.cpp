@@ -24,10 +24,11 @@ int main(int argc, char* argv[])
 
 	util::ConvertDepthToRGBUsingHistogram(hist.ptr, disc.ptr, in.width, in.height, 0, 0.625f);
 
-	std::string newfile(argv[1]);
-	newfile[newfile.size() - 1] = 'g';
-	newfile[newfile.size() - 2] = 'n';
-	newfile[newfile.size() - 3] = 'p';
-	img::imwrite(newfile.c_str(), hist);
+	//std::string newfile(argv[1]);
+	//newfile[newfile.size() - 1] = 'g';
+	//newfile[newfile.size() - 2] = 'n';
+	//newfile[newfile.size() - 3] = 'p';
+	//img::imwrite(newfile.c_str(), hist);
+	img::imwrite("out.png", hist);
 	return 0;
 }

@@ -59,10 +59,10 @@ int main(int argc, char* argv[])
 		right_g(i) >>= bitshift;
 	}
 
-	auto disp = img::imread<float,1>(doc["input_disp"].string().c_str());
-	auto conf = img::imread<float,1>(doc["input_conf"].string().c_str());
+	auto disp = img::imread<float,1>(doc["output_disp"].string().c_str());
+	auto conf = img::imread<float,1>(doc["output_conf"].string().c_str());
 
-	auto gt_disp = img::imread<float,1>(doc["gt_disp"].string().c_str());
+	auto gt_disp = img::imread<float,1>(doc["gt"].string().c_str());
 	auto gt_mask = img::imread<float,1>(doc["gt_mask"].string().c_str());
     json::array results;
 
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
         results.push_back(res);
     }
     std::cout << pretty_print(results);
-    std::ofstream outputfile(doc["output"].string());
-    outputfile << pretty_print(results);
+    //std::ofstream outputfile(doc["output"].string());
+    //outputfile << pretty_print(results);
     return 0;
 }
