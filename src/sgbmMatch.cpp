@@ -348,6 +348,13 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                 }
             }
         }
+        if(costsName.size()) {
+            struct raw_header {int w,h,c,bpp;};
+            raw_header hd = {width,height,maxdisp,4};
+            std::ofstream outn(costsName,std::ofstream::binary);
+            outn.write((char*)&hd,sizeof(raw_header)); 
+            outn.write((char*)costsSummed.data(),costsSummed.size()*sizeof(uint32_t));
+        }
         //min selection
         for (int x = config.box_radius; x < width - config.box_radius; x++) {
             auto minRVal = (uint32_t)config.score_max;

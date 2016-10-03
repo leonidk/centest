@@ -44,5 +44,5 @@
     "minint": 255,
     "maxdisp": 70,
     
-    "costs": "./costs.pmm"
+    "costs": ""
 }
