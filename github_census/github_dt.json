@@ -13,7 +13,7 @@
             "texture_count": 0,
             "score_min": 1,
             "score_max": 815,
-            "median_plus": 14,
+            "median_plus": 15,
             "median_minus": 1,
             "median_thresh": 50,
             "hole_fill": false,
