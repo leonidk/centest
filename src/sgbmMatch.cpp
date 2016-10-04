@@ -109,18 +109,19 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
     img::Img<uint32_t> lc(left.width, left.height, (uint32_t*)censusLeft.data());
     img::Img<uint32_t> rc(left.width, left.height, (uint32_t*)censusRight.data());
     img::Img<uint32_t> costI(maxdisp, width, (uint32_t*)costs.data());
-    std::fill(costsSummed.begin(), costsSummed.end(), config.score_max);
+    const auto default_score = config.score_max;
+    std::fill(costsSummed.begin(), costsSummed.end(), default_score);
 
-    std::vector<int32_t> topCosts(width * maxdisp, config.score_max);
-    std::vector<int32_t> topLeftCosts(width * maxdisp, config.score_max);
-    std::vector<int32_t> topRightCosts(width * maxdisp, config.score_max);
+    std::vector<int32_t> topCosts(width * maxdisp, default_score);
+    std::vector<int32_t> topLeftCosts(width * maxdisp, default_score);
+    std::vector<int32_t> topRightCosts(width * maxdisp, default_score);
     std::vector<float> bilateralWeights(box_width * box_width);
 
     
     for (int y = config.box_radius; y < height - config.box_radius; y++) {
         //printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
         auto prevVal = 0;
-        std::fill(costs.begin(),costs.end(), config.score_max);
+        std::fill(costs.begin(),costs.end(), default_score);
         if (config.use_blf) {
             #pragma omp parallel for
             for (int x = config.box_radius; x < width - config.box_radius; x++) {
@@ -180,8 +181,8 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
 
         //  semiglobal
         if (config.sgm) {
-            std::vector<int32_t> leftCosts(width * maxdisp, config.score_max);
-            std::vector<int32_t> rightCosts(width * maxdisp, config.score_max);
+            std::vector<int32_t> leftCosts(width * maxdisp, default_score);
+            std::vector<int32_t> rightCosts(width * maxdisp, default_score);
 
             //left
             for (int x = 1; x < width; x++) {
@@ -193,7 +194,7 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                     p1 = std::min(p1, p2 - 1);
                 }
                 auto lftI = 0;
-                auto lftV = config.score_max;
+                auto lftV = default_score;
                 for (int d = 0; d < maxdisp; d++) {
                     auto cost = leftCosts[(x - 1) * maxdisp + d];
                     if (cost < lftV) {
@@ -223,7 +224,7 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                     p1 = std::min(p1, p2 - 1);
                 }
                 auto topI = 0;
-                auto topV = config.score_max;
+                auto topV = default_score;
                 for (int d = 0; d < maxdisp; d++) {
                     auto cost = topCosts[(x)*maxdisp + d];
                     if (cost < topV) {
@@ -252,7 +253,7 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                     p1 = std::min(p1, p2 - 1);
                 }
                 auto tplI = 0;
-                auto tplV = config.score_max;
+                auto tplV = default_score;
                 for (int d = 0; d < maxdisp; d++) {
                     auto cost = topLeftCosts[(x - 1) * maxdisp + d];
                     if (cost < tplV) {
@@ -282,7 +283,7 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                     p1 = std::min(p1, p2 - 1);
                 }
                 auto rgtI = 0;
-                auto rgtV = config.score_max;
+                auto rgtV = default_score;
                 for (int d = 0; d < maxdisp; d++) {
                     auto cost = rightCosts[(x + 1) * maxdisp + d];
                     if (cost < rgtV) {
@@ -312,7 +313,7 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                     p1 = std::min(p1, p2 - 1);
                 }
                 auto rgtI = 0;
-                auto rgtV = config.score_max;
+                auto rgtV = default_score;
                 for (int d = 0; d < maxdisp; d++) {
                     auto cost = topRightCosts[(x + 1) * maxdisp + d];
                     if (cost < rgtV) {
@@ -357,9 +358,9 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
         }
         //min selection
         for (int x = config.box_radius; x < width - config.box_radius; x++) {
-            auto minRVal = (uint32_t)config.score_max;
+            auto minRVal = (uint32_t)default_score;
             auto minRIdx = 0;
-            auto minLVal = (uint32_t)config.score_max;
+            auto minLVal = (uint32_t)default_score;
             auto minLIdx = 0;
             for (int d = 0; d < maxdisp; d++) {
                 auto cost = costsSummed[x * maxdisp + d];
@@ -402,7 +403,7 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
 			bitMask |= (diffL >= config.neighbor || diffR >= config.neighbor) << 1;
 
             // second peak threshold
-            uint32_t minL2Val = config.score_max;
+            uint32_t minL2Val = default_score;
             for (int d = 0; d < maxdisp; d++) {
                 auto cost = costsSummed[x * maxdisp + d];
                 auto costNext = (d == maxdisp - 1) ? cost : costsSummed[x * maxdisp + d + 1];
@@ -433,11 +434,11 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
 			bitMask |= (minLVal >= config.score_min && minLVal <= config.score_max) << 4;
 
             // median threshold
-            uint32_t me = config.score_max;
+            uint32_t me = default_score;
             auto initialized = false;
             for (int d = 0; d < maxdisp; d++) {
                 auto cost = costsSummed[x * maxdisp + d];
-                if (!initialized && cost != config.score_max) {
+                if (!initialized && cost != default_score) {
                     initialized = true;
                     me = cost;
                 }
