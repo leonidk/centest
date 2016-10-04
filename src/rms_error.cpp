@@ -103,6 +103,12 @@ int main(int argc, char* argv[])
         res["threshold"] = thresh;
         res["description"] = json::value{std::string("Robust loss over valid pixels with t=") + std::to_string(thresh)};
         results[res["name"].string()] = res;
+        
+        json::object res2;
+        res2["name"] = std::string("density") ;
+        res2["result"] = count_n/count;
+        res2["description"] = json::value{std::string("Fraction of valid ground truth pixels recovered by the algorithm")};
+        results[res2["name"].string()] = res2;
 	}
 
     // sweep f# scores
