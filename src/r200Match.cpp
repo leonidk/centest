@@ -239,12 +239,12 @@ void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::
 
 	// old school?
 	const auto B_R = config.box_radius;
-    const auto default_cost = (config.score_max + config.dt_scale - 1) / config.dt_scale;
+
     censusTransform(lptr, censusLeft.data(), width, height);
     censusTransform(rptr, censusRight.data(), width, height);
     img::Img<uint32_t> lc(left.width, left.height, (uint32_t*)censusLeft.data());
     img::Img<uint32_t> rc(left.width, left.height, (uint32_t*)censusRight.data());
-	std::fill(costs.begin(), costs.end(), default_cost);
+	std::fill(costs.begin(), costs.end(), (config.score_max + config.dt_scale - 1) / config.dt_scale);
 
     for (int y = B_R; y < height - B_R; y++) {
         //printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
@@ -368,7 +368,7 @@ void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::
             auto initialized = false;
             for (int d = 0; d < maxdisp; d++) {
                 auto cost = costX[x * maxdisp + d];
-                if (!initialized && cost != default_cost) {
+                if (!initialized && cost != std::numeric_limits<uint16_t>::max()) {
                     initialized = true;
                     me = cost;
                 }

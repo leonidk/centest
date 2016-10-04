@@ -109,41 +109,45 @@ int main(int argc, char* argv[])
         res2["result"] = count_n/count;
         res2["description"] = json::value{std::string("Fraction of valid ground truth pixels recovered by the algorithm")};
         results[res2["name"].string()] = res2;
+        // sweep f# scores
+        for(const auto & beta : {0.25f, 0.5f, 1.0f, 2.0f, 4.0f}) 
+        {
+            double tp = 0.0f;
+            double fp = 0.0f;
+            double tn = 0.0f;
+            double fn = 0.0f;
+            for(int i=0; i < disp.size(); i++) {
+                if (gt_mask(i) < 0.5)
+                    continue;
+                auto isValid = std::abs(gt_disp(i) - disp(i)) < thresh ? true : false;
+                auto thinksValid = conf(i) > 0.5 ? true : false;
+                
+                if(isValid) {
+                    if(thinksValid)
+                        tp++;
+                    else
+                        fn++;
+                } else {
+                    if(thinksValid)
+                        fp++;
+                    else
+                        tn++;
+                }
+            }
+            auto b2 = (beta*beta);
+            auto b2p1 = (b2 + 1.0);
+            auto score = (b2p1*tp)/(b2p1*tp+b2*fn+fp);
+            json::object res;
+            auto t_s = to_string_with_precision(thresh,3) ;
+            res["name"] = std::string("f_") +to_string_with_precision(beta,3) + std::string("_") + t_s ;
+            res["result"] = score;
+            res["beta"] = beta;
+            res["threshold"] = thresh;
+            res["description"] = json::value{std::string("F score with B=") + std::to_string(beta) + std::string(" and t=") + t_s};
+            results[res["name"].string()] = res;
+        }
 	}
 
-    // sweep f# scores
-    for(const auto & beta : {0.25f, 0.5f, 1.0f, 2.0f, 4.0f}) 
-    {
-        double tp = 0.0f;
-        double fp = 0.0f;
-        double tn = 0.0f;
-        double fn = 0.0f;
-        for(int i=0; i < disp.size(); i++) {
-            auto isValid = gt_mask(i) > 0.5 ? true : false;
-            auto thinksValid = conf(i) > 0.5 ? true : false;
-			
-            if(isValid) {
-                if(thinksValid)
-                    tp++;
-                else
-                    fn++;
-            } else {
-                if(thinksValid)
-                    fp++;
-                else
-                    tn++;
-            }
-        }
-        auto b2 = (beta*beta);
-        auto b2p1 = (b2 + 1.0);
-        auto score = (b2p1*tp)/(b2p1*tp+b2*fn+fp);
-        json::object res;
-        res["name"] = std::string("f_") +to_string_with_precision(beta,3) ;
-        res["result"] = score;
-        res["beta"] = beta;
-        res["description"] = json::value{std::string("F score with B=") + std::to_string(beta)};
-        results[res["name"].string()] = res;
-    }
     std::cout << pretty_print(results);
     //std::ofstream outputfile(doc["output"].string());
     //outputfile << pretty_print(results);
