@@ -34,7 +34,7 @@ def run_alg(dataset,algorithm,out_dir):
             call([algorithm['command'],cfg_path])
 
 def run_all_algs():
-    out_dir = '/home/leonidk/tmpfs/evalout'
+    out_dir = '.'
     saved_file = os.path.join(out_dir,'finished_results.json')
     metric_results = os.path.join(out_dir,'metric_results.json')
     dataset_dir = '.'
