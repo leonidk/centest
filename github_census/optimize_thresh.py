@@ -19,7 +19,7 @@ class DTFlagsTuner(MeasurementInterface):
 
   def manipulator(self):
     manipulator = ConfigurationManipulator()
-    manipulator.add_parameter(IntegerParameter("left_right_int", 0,3))
+    manipulator.add_parameter(IntegerParameter("left_right_int", 0,1))
     manipulator.add_parameter(FloatParameter("left_right_sub", 0.1,1.0))
     manipulator.add_parameter(IntegerParameter("neighbor", 0,100))
     manipulator.add_parameter(IntegerParameter("second_peak", 0,100))

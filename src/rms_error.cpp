@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
         res2["description"] = json::value{std::string("Fraction of valid ground truth pixels recovered by the algorithm")};
         results[res2["name"].string()] = res2;
         // sweep f# scores
-        for(const auto & beta : {0.25f, 0.5f, 1.0f, 2.0f, 4.0f}) 
+        for(const auto & beta : {0.125f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f,8.0f}) 
         {
             double tp = 0.0f;
             double fp = 0.0f;
