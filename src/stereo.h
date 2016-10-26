@@ -3,6 +3,8 @@
 #include "image.h"
 #include <cstring> // memset
 #include <vector>
+#include <string>
+#include <fstream>
 namespace stereo {
 
 class StereoMatch {
@@ -25,6 +27,7 @@ public:
     }
 
 public: // but please don't set!
+    std::string costsName; 
     int width, height, maxdisp, muldisp;
 };
 }

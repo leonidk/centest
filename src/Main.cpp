@@ -111,6 +111,7 @@ int main(int argc, char* argv[])
 	} else {
 		cm = std::make_unique<stereo::R200Match>(left.width, left.height, doc["maxdisp"].number<int>()+1, (int)scale_disp);
 	}
+    cm->costsName = doc["costs"].string();
     auto startTime = std::chrono::steady_clock::now();
 	auto res = cm->match(left_g, right_g);
 	auto disp = res.first;

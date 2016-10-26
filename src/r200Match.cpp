@@ -271,6 +271,17 @@ void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::
 		// input volume, edge image, iterations (3), X-Y Sigma, Value Sigma)
 		costs = domainTransform(costs, left, config);
 	}
+    if(costsName.size()) {
+        struct raw_header {int w,h,c,bpp;};
+        raw_header hd = {width,height,maxdisp,2};
+        std::ofstream outn(costsName,std::ofstream::binary);
+        //std::vector<uint32_t> cw(costs.size());
+        //for(int i=0; i < costs.size(); i++) {
+        //    cw[i] = costs[i];
+        //}
+        outn.write((char*)&hd,sizeof(raw_header)); 
+        outn.write((char*)costs.data(),costs.size()*sizeof(uint16_t));
+    }
     for (int y = B_R; y < height - B_R; y++) {
         auto prevVal = 0;
         auto costX = costs.data() + y * (width*maxdisp);

@@ -15,7 +15,7 @@ def extract_fields(dataset,name,out_dir):
     data["right_rgb"] = data["data"]["right"]["rgb"]
     data["output_disp"] = os.path.join(out_dir,name + '_disp.pfm')
     data["output_conf"] = os.path.join(out_dir,name + '_conf.pfm')
-    data["costs"] = os.path.join(out_dir,name + '_cost.pmm')
+    #data["costs"] = os.path.join(out_dir,name + '_cost.pmm')
     return data
 
 def run_alg(dataset,algorithm,out_dir):
@@ -34,12 +34,12 @@ def run_alg(dataset,algorithm,out_dir):
             call([algorithm['command'],cfg_path])
 
 def run_all_algs():
-    saved_file = 'finished_results.json'
-    metric_results = 'metric_results.json'
+    out_dir = '.'
+    saved_file = os.path.join(out_dir,'finished_results.json')
+    metric_results = os.path.join(out_dir,'metric_results.json')
     dataset_dir = '.'
     metrics_dir = '.'
     algs_dir = '.'
-    out_dir = 'out'
 
     try:
         with open(saved_file) as fp:

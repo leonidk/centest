@@ -55,7 +55,7 @@ ALG_SRC = $(wildcard src/*Match.cpp)
 ALG_OBJ = $(patsubst src/%.cpp, obj/%.o, $(ALG_SRC))
 #src/%.o: src/%.cpp
 #	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
-all: vis_pfm rms_error librs_demo centest
+all: vis_pfm rms_error librs_demo centest cost_to_conf
 obj:
 	mkdir -p obj/
 obj/%.o: src/%.cpp | obj
@@ -68,6 +68,8 @@ librs_demo: obj/rs_demo.o obj/imio.o obj/imshow.o $(ALG_OBJ)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -lrealsense -o $@
 centest: obj/Main.o obj/imio.o obj/imshow.o $(ALG_OBJ)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -o $@
+cost_to_conf: obj/cost_to_conf.o obj/imio.o obj/imshow.o $(ALG_OBJ)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -o $@
 clean:
-	rm -f vis_pfm rms_error librs_demo centest
+	rm -f vis_pfm rms_error librs_demo centest cost_to_conf
 	rm -rf obj/
