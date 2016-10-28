@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 
 import numpy as np
-from skimage import filters,exposure,io
+from skimage import filter,exposure,io
 import skimage
 import os
 import re, shutil
@@ -10,13 +11,11 @@ target_dir = 'MiddEval3_noise'
 
 input_gamma = 2.2
 output_gamma = 1.0  #1.0 means do nothing
-gaussian_sigma = 0.75
-well_capacity = 6000.0
+gaussian_sigma = 0.55
+well_capacity = 1000.0
 read_noise = 2.0
-color_correction = np.array(
-    [[1.6013  ,-0.4631, -0.1382 ],
-[-0.2511, 1.6393,  -0.3882 ],
-[0.0362,  -0.5823, 1.5461 ]])
+color_correction = np.array([[1.6013  ,-0.4631, -0.1382 ],[-0.2511, 1.6393,  -0.3882 ],[0.0362,  -0.5823, 1.5461 ]])
+#color_correction = np.array([[1,0,0],[0,1,0],[0,0,1]])
 cc_inv = np.linalg.pinv(color_correction)
 
 def check_and_make_dir(directory):
@@ -28,7 +27,7 @@ def add_noise(img):
     img = skimage.img_as_float(img)
     img = img.dot(cc_inv)
     img = exposure.adjust_gamma(img,input_gamma)
-    img = filters.gaussian(img,gaussian_sigma,multichannel=True)
+    img = filter.gaussian_filter(img,gaussian_sigma,multichannel=True)
 
     img *= well_capacity
     img = np.random.poisson(img).astype(np.float32)

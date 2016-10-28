@@ -68,5 +68,5 @@ for folder in os.listdir(basePath):
     config['minint'][lcfolder] = 0x00FF
     config['maxint'][lcfolder] = 0xFFFF
 
-with open('middlebury.json','w') as fp:
+with open(targetPath + '.json','w') as fp:
     json.dump(config,fp, sort_keys=True,indent=4, separators=(',', ': '))
