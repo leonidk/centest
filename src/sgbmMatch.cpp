@@ -185,7 +185,7 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
 				auto p1 = config.p1;
 				auto p2 = config.p2;
 				if (config.scale_p2) {
-					auto grad = abs(lptr[(y + y_shift) * width + (x + x_shift)] - lptr[(y + y_shift) * width + x]) + 1;
+					auto grad = abs(lptr[(y + y_shift) * width + (x + x_shift)] - lptr[y * width + x]) + 1;
 					p2 = (p2 + grad - 1) / grad;
 					p1 = std::min(p1, p2 - 1);
 				}
