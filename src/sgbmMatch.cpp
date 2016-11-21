@@ -205,8 +205,8 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                 for (int d = 0; d < maxdisp; d++) {
                     //left
                     int lftcost = leftCosts[(x - 1) * maxdisp + d];
-                    int lftcostP1 = std::min(leftCosts[(x - 1) * maxdisp + clipD(lftI + 1)],
-                                        leftCosts[(x - 1) * maxdisp + clipD(lftI - 1)])
+                    int lftcostP1 = std::min(leftCosts[(x - 1) * maxdisp + clipD(d + 1)],
+                                        leftCosts[(x - 1) * maxdisp + clipD(d - 1)])
                         + p1;
                     int lftcostP2 = lftV + p2;
                     int lftC = (int)std::min({ lftcost, lftcostP1, lftcostP2 }) - (int)lftV;
@@ -234,8 +234,8 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                 }
                 for (int d = 0; d < maxdisp; d++) {
                     int topcost = topCosts[(x)*maxdisp + d];
-                    int topcostP1 = std::min(topCosts[(x)*maxdisp + clipD(topI + 1)],
-                                        topCosts[(x)*maxdisp + clipD(topI - 1)])
+                    int topcostP1 = std::min(topCosts[(x)*maxdisp + clipD(d + 1)],
+                                        topCosts[(x)*maxdisp + clipD(d - 1)])
                         + p1;
                     int topcostP2 = topV + p2;
                     int topC = (int)std::min({ topcost, topcostP1, topcostP2 }) - (int)topV;
@@ -264,8 +264,8 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                 for (int d = 0; d < maxdisp; d++) {
                     //left
                     int tplcost = topLeftCosts[(x - 1) * maxdisp + d];
-                    int tplcostP1 = std::min(topLeftCosts[(x - 1) * maxdisp + clipD(tplI + 1)],
-                                        topLeftCosts[(x - 1) * maxdisp + clipD(tplI - 1)])
+                    int tplcostP1 = std::min(topLeftCosts[(x - 1) * maxdisp + clipD(d + 1)],
+                                        topLeftCosts[(x - 1) * maxdisp + clipD(d - 1)])
                         + p1;
                     int tplcostP2 = tplV + p2;
                     int tplC = (int)std::min({ tplcost, tplcostP1, tplcostP2 }) - (int)tplV;
@@ -294,8 +294,8 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                 for (int d = 0; d < maxdisp; d++) {
                     //left
                     int rgtcost = rightCosts[(x + 1) * maxdisp + d];
-                    int rgtcostP1 = std::min(rightCosts[(x + 1) * maxdisp + clipD(rgtI + 1)],
-                                        rightCosts[(x + 1) * maxdisp + clipD(rgtI - 1)])
+                    int rgtcostP1 = std::min(rightCosts[(x + 1) * maxdisp + clipD(d + 1)],
+                                        rightCosts[(x + 1) * maxdisp + clipD(d - 1)])
                         + p1;
                     int rgtcostP2 = rgtV + p2;
                     int rgtC = (int)std::min({ rgtcost, rgtcostP1, rgtcostP2 }) - (int)rgtV;
@@ -324,8 +324,8 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                 for (int d = 0; d < maxdisp; d++) {
                     //left
                     int rgtcost = topRightCosts[(x + 1) * maxdisp + d];
-                    int rgtcostP1 = std::min(topRightCosts[(x + 1) * maxdisp + clipD(rgtI + 1)],
-                                        topRightCosts[(x + 1) * maxdisp + clipD(rgtI - 1)])
+                    int rgtcostP1 = std::min(topRightCosts[(x + 1) * maxdisp + clipD(d + 1)],
+                                        topRightCosts[(x + 1) * maxdisp + clipD(d - 1)])
                         + p1;
                     int rgtcostP2 = rgtV + p2;
                     int rgtC = (int)std::min({ rgtcost, rgtcostP1, rgtcostP2 }) - (int)rgtV;
