@@ -3,6 +3,7 @@
 #include <limits>
 #include <fstream>
 #include <cmath>
+#include <functional>
 using namespace stereo;
 
 // Using the parameters from
@@ -178,170 +179,61 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
             }
         }
         auto clipD = [&](int d) { return std::min(maxdisp - 1, std::max(0, d)); };
+		auto sgm = [&](int y_start, int x_start, std::function<bool(int)> x_true, std::function<int(int&)> mod, std::vector<int32_t> & propCosts)
+		{
+			auto x_shift = 0 -x_start;
+			for (int x = x_start; x_true(x); mod(x)) {
+				auto p1 = config.p1;
+				auto p2 = config.p2;
+				if (config.scale_p2) {
+					auto grad = abs(lptr[(y+y_start) * width + (x - x_shift)] - lptr[(y+y_start) * width + x]) + 1;
+					p2 = (p2 + grad - 1) / grad;
+					p1 = std::min(p1, p2 - 1);
+				}
+				auto n_best = default_score;
+				for (int d = 0; d < maxdisp; d++) {
+					auto cost = propCosts[(x - 1) * maxdisp + d];
+					if (cost < n_best) {
+						n_best = cost;
+					}
+				}
+				for (int d = 0; d < maxdisp; d++) {
+					//left
+					int lftcost = propCosts[(x - x_shift) * maxdisp + d];
+					int lftcostP1 = std::min(propCosts[(x - 1) * maxdisp + clipD(d + 1)],
+						propCosts[(x - 1) * maxdisp + clipD(d - 1)])
+						+ p1;
+					int lftcostP2 = n_best + p2;
+					int lftC = (int)std::min({ lftcost, lftcostP1, lftcostP2 }) - (int)n_best;
 
+					propCosts[x * maxdisp + d] = costs[x * maxdisp + d] + lftC;
+				}
+			}
+		};
         //  semiglobal
         if (config.sgm) {
             std::vector<int32_t> leftCosts(width * maxdisp, default_score);
             std::vector<int32_t> rightCosts(width * maxdisp, default_score);
 
+			auto xplus = [](int&x) {return ++x;};
+			auto xminus = [](int&x) {return --x;};
+			auto ltw = [this](int x) {return x < this->width;};
+			auto gtz = [](int x) { return x >= 0;};
             //left
-            for (int x = 1; x < width; x++) {
-                auto p1 =config.p1;
-                auto p2 =config.p2;
-                if (config.scale_p2) {
-                    auto grad = abs(lptr[y * width + x - 1] - lptr[y * width + x]) + 1;
-                    p2 = (p2 + grad - 1) / grad;
-                    p1 = std::min(p1, p2 - 1);
-                }
-                auto lftI = 0;
-                auto lftV = default_score;
-                for (int d = 0; d < maxdisp; d++) {
-                    auto cost = leftCosts[(x - 1) * maxdisp + d];
-                    if (cost < lftV) {
-                        lftV = cost;
-                        lftI = d;
-                    }
-                }
-                for (int d = 0; d < maxdisp; d++) {
-                    //left
-                    int lftcost = leftCosts[(x - 1) * maxdisp + d];
-                    int lftcostP1 = std::min(leftCosts[(x - 1) * maxdisp + clipD(d + 1)],
-                                        leftCosts[(x - 1) * maxdisp + clipD(d - 1)])
-                        + p1;
-                    int lftcostP2 = lftV + p2;
-                    int lftC = (int)std::min({ lftcost, lftcostP1, lftcostP2 }) - (int)lftV;
+			sgm(0, 1, ltw, xplus, leftCosts);
 
-                    leftCosts[x * maxdisp + d] = costs[x * maxdisp + d] + lftC;
-                }
-            }
             //top
-            for (int x = 0; x < width; x++) {
-                auto p1 =config.p1;
-                auto p2 =config.p2;
-                if (config.scale_p2) {
-                    auto grad = abs(lptr[(y - 1) * width + x] - lptr[y * width + x]) + 1;
-                    p2 = (p2 + grad - 1) / grad;
-                    p1 = std::min(p1, p2 - 1);
-                }
-                auto topI = 0;
-                auto topV = default_score;
-                for (int d = 0; d < maxdisp; d++) {
-                    auto cost = topCosts[(x)*maxdisp + d];
-                    if (cost < topV) {
-                        topV = cost;
-                        topI = d;
-                    }
-                }
-                for (int d = 0; d < maxdisp; d++) {
-                    int topcost = topCosts[(x)*maxdisp + d];
-                    int topcostP1 = std::min(topCosts[(x)*maxdisp + clipD(d + 1)],
-                                        topCosts[(x)*maxdisp + clipD(d - 1)])
-                        + p1;
-                    int topcostP2 = topV + p2;
-                    int topC = (int)std::min({ topcost, topcostP1, topcostP2 }) - (int)topV;
+			sgm(-1, 0, ltw, xplus, topCosts);
 
-                    topCosts[x * maxdisp + d] = costs[x * maxdisp + d] + topC;
-                }
-            }
             // topleft
-            for (int x = 1; x < width; x++) {
-                auto p1 =config.p1;
-                auto p2 =config.p2;
-                if (config.scale_p2) {
-                    auto grad = abs(lptr[(y - 1) * width + x - 1] - lptr[y * width + x]) + 1;
-                    p2 = (p2 + grad - 1) / grad;
-                    p1 = std::min(p1, p2 - 1);
-                }
-                auto tplI = 0;
-                auto tplV = default_score;
-                for (int d = 0; d < maxdisp; d++) {
-                    auto cost = topLeftCosts[(x - 1) * maxdisp + d];
-                    if (cost < tplV) {
-                        tplV = cost;
-                        tplI = d;
-                    }
-                }
-                for (int d = 0; d < maxdisp; d++) {
-                    //left
-                    int tplcost = topLeftCosts[(x - 1) * maxdisp + d];
-                    int tplcostP1 = std::min(topLeftCosts[(x - 1) * maxdisp + clipD(d + 1)],
-                                        topLeftCosts[(x - 1) * maxdisp + clipD(d - 1)])
-                        + p1;
-                    int tplcostP2 = tplV + p2;
-                    int tplC = (int)std::min({ tplcost, tplcostP1, tplcostP2 }) - (int)tplV;
+			sgm(-1, 1, ltw, xplus, topLeftCosts);
 
-                    topLeftCosts[x * maxdisp + d] = costs[x * maxdisp + d] + tplC;
-                }
-            }
             //right
-            for (int x = width - 2; x >= 0; x--) {
-                auto p1 =config.p1;
-                auto p2 =config.p2;
-                if (config.scale_p2) {
-                    auto grad = abs(lptr[(y)*width + x + 1] - lptr[y * width + x]) + 1;
-                    p2 = (p2 + grad - 1) / grad;
-                    p1 = std::min(p1, p2 - 1);
-                }
-                auto rgtI = 0;
-                auto rgtV = default_score;
-                for (int d = 0; d < maxdisp; d++) {
-                    auto cost = rightCosts[(x + 1) * maxdisp + d];
-                    if (cost < rgtV) {
-                        rgtV = cost;
-                        rgtI = d;
-                    }
-                }
-                for (int d = 0; d < maxdisp; d++) {
-                    //left
-                    int rgtcost = rightCosts[(x + 1) * maxdisp + d];
-                    int rgtcostP1 = std::min(rightCosts[(x + 1) * maxdisp + clipD(d + 1)],
-                                        rightCosts[(x + 1) * maxdisp + clipD(d - 1)])
-                        + p1;
-                    int rgtcostP2 = rgtV + p2;
-                    int rgtC = (int)std::min({ rgtcost, rgtcostP1, rgtcostP2 }) - (int)rgtV;
+			sgm(0, width - 2, gtz, xminus, rightCosts);
 
-                    rightCosts[x * maxdisp + d] = costs[x * maxdisp + d] + rgtC;
-                }
-            }
             //topRight
-            for (int x = width - 2; x >= 0; x--) {
-                auto p1 =config.p1;
-                auto p2 =config.p2;
-                if (config.scale_p2) {
-                    auto grad = abs(lptr[(y - 1) * width + x + 1] - lptr[y * width + x]) + 1;
-                    p2 = (p2 + grad - 1) / grad;
-                    p1 = std::min(p1, p2 - 1);
-                }
-                auto rgtI = 0;
-                auto rgtV = default_score;
-                for (int d = 0; d < maxdisp; d++) {
-                    auto cost = topRightCosts[(x + 1) * maxdisp + d];
-                    if (cost < rgtV) {
-                        rgtV = cost;
-                        rgtI = d;
-                    }
-                }
-                for (int d = 0; d < maxdisp; d++) {
-                    //left
-                    int rgtcost = topRightCosts[(x + 1) * maxdisp + d];
-                    int rgtcostP1 = std::min(topRightCosts[(x + 1) * maxdisp + clipD(d + 1)],
-                                        topRightCosts[(x + 1) * maxdisp + clipD(d - 1)])
-                        + p1;
-                    int rgtcostP2 = rgtV + p2;
-                    int rgtC = (int)std::min({ rgtcost, rgtcostP1, rgtcostP2 }) - (int)rgtV;
+			sgm(-1, width - 2, gtz, xminus, topRightCosts);
 
-                    topRightCosts[x * maxdisp + d] = costs[x * maxdisp + d] + rgtC;
-                }
-            }
-            for (int x = 0; x < width; x++) {
-                for (int d = 0; d < maxdisp; d++) {
-                    costsSummed[x * maxdisp + d] = leftCosts[x * maxdisp + d]
-                        + topLeftCosts[x * maxdisp + d]
-                        + topCosts[x * maxdisp + d]
-                        + topRightCosts[x * maxdisp + d]
-                        + rightCosts[x * maxdisp + d];
-                }
-            }
         } else {
             for (int x = 0; x < width; x++) {
                 for (int d = 0; d < maxdisp; d++) {
