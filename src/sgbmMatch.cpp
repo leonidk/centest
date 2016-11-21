@@ -178,30 +178,30 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
                 }
             }
         }
-        auto clipD = [&](int d) { return std::min(maxdisp - 1, std::max(0, d)); };
-		auto sgm = [&](int y_start, int x_start, std::function<bool(int)> x_true, std::function<int(int&)> mod, std::vector<int32_t> & propCosts)
+		auto clipD = [&](int d) { return std::min(maxdisp - 1, std::max(0, d)); };
+		auto sgm = [&](int y_shift, int x_shift, int x_start, std::function<bool(int)> x_true, int x_inc, std::vector<int32_t> & propCosts)
 		{
-			auto x_shift = 0 -x_start;
-			for (int x = x_start; x_true(x); mod(x)) {
+			for (int x = x_start; x_true(x); x += x_inc) {
 				auto p1 = config.p1;
 				auto p2 = config.p2;
 				if (config.scale_p2) {
-					auto grad = abs(lptr[(y+y_start) * width + (x - x_shift)] - lptr[(y+y_start) * width + x]) + 1;
+					auto grad = abs(lptr[(y + y_shift) * width + (x + x_shift)] - lptr[(y + y_shift) * width + x]) + 1;
 					p2 = (p2 + grad - 1) / grad;
 					p1 = std::min(p1, p2 - 1);
 				}
 				auto n_best = default_score;
 				for (int d = 0; d < maxdisp; d++) {
-					auto cost = propCosts[(x - 1) * maxdisp + d];
+					auto cost = propCosts[(x + x_shift) * maxdisp + d];
 					if (cost < n_best) {
 						n_best = cost;
 					}
 				}
 				for (int d = 0; d < maxdisp; d++) {
 					//left
-					int lftcost = propCosts[(x - x_shift) * maxdisp + d];
-					int lftcostP1 = std::min(propCosts[(x - 1) * maxdisp + clipD(d + 1)],
-						propCosts[(x - 1) * maxdisp + clipD(d - 1)])
+					int lftcost = propCosts[(x + x_shift) * maxdisp + d];
+					int lftcostP1 = std::min(
+						propCosts[(x + x_shift) * maxdisp + clipD(d + 1)],
+						propCosts[(x + x_shift) * maxdisp + clipD(d - 1)])
 						+ p1;
 					int lftcostP2 = n_best + p2;
 					int lftC = (int)std::min({ lftcost, lftcostP1, lftcostP2 }) - (int)n_best;
@@ -210,29 +210,28 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
 				}
 			}
 		};
-        //  semiglobal
+		//  semiglobal
         if (config.sgm) {
             std::vector<int32_t> leftCosts(width * maxdisp, default_score);
             std::vector<int32_t> rightCosts(width * maxdisp, default_score);
 
-			auto xplus = [](int&x) {return ++x;};
-			auto xminus = [](int&x) {return --x;};
-			auto ltw = [this](int x) {return x < this->width;};
+			auto ltw = [&](int x) {return x < width;};
 			auto gtz = [](int x) { return x >= 0;};
-            //left
-			sgm(0, 1, ltw, xplus, leftCosts);
+			//int y_shift, int x_shift, int x_start, std::function<bool(int)> x_true, int x_inc, std::vector<int32_t> & propCosts)
+			//left
+			sgm(0, -1, 1, ltw, 1, leftCosts);
 
             //top
-			sgm(-1, 0, ltw, xplus, topCosts);
+			sgm(-1, 0, 0, ltw, 1, topCosts);
 
-            // topleft
-			sgm(-1, 1, ltw, xplus, topLeftCosts);
+            //topleft
+			sgm(-1, -1, 1, ltw, 1, topLeftCosts);
 
             //right
-			sgm(0, width - 2, gtz, xminus, rightCosts);
+			sgm(0, +1, width - 2, gtz, -1, rightCosts);
 
             //topRight
-			sgm(-1, width - 2, gtz, xminus, topRightCosts);
+			sgm(-1, +1, width - 2, gtz, -1, topRightCosts);
 
         } else {
             for (int x = 0; x < width; x++) {
