@@ -233,6 +233,17 @@ void sgbmMatch::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right,img::I
             //topRight
 			sgm(-1, +1, width - 2, gtz, -1, topRightCosts);
 
+			//sum costs
+			for (int x = 0; x < width; x++) {
+				for (int d = 0; d < maxdisp; d++) {
+					costsSummed[x * maxdisp + d] = 
+						+ leftCosts[x * maxdisp + d]
+						+ topLeftCosts[x * maxdisp + d]
+						+ topCosts[x * maxdisp + d]
+						+ topRightCosts[x * maxdisp + d]
+						+ rightCosts[x * maxdisp + d];
+				}
+			}
         } else {
             for (int x = 0; x < width; x++) {
                 for (int d = 0; d < maxdisp; d++) {
