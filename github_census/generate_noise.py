@@ -30,8 +30,11 @@ def add_noise(img):
     img = filter.gaussian_filter(img,gaussian_sigma,multichannel=True)
 
     img *= well_capacity
-    img = np.random.poisson(img).astype(np.float32)
-    img += np.random.poisson(np.ones(img.shape)*read_noise).astype(np.float32)
+    img = np.random.poisson(img).astype(np.float64)
+
+    #img += np.random.poisson(np.ones(img.shape)*read_noise).astype(np.float32)
+    img += (np.random.standard_normal(img.shape)*read_noise).astype(np.float64)
+
     img /= well_capacity
 
     img = np.clip(img,0.0,1.0)
