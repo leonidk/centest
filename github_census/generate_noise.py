@@ -11,7 +11,7 @@ target_dir = 'MiddEval3_noise'
 
 input_gamma = 2.2
 output_gamma = 1.0  #1.0 means do nothing
-gaussian_sigma = 1.4
+gaussian_sigma = 0.8
 well_capacity = 1600.0
 read_noise = 2.0
 color_correction = np.array([[1.6013  ,-0.4631, -0.1382 ],[-0.2511, 1.6393,  -0.3882 ],[0.0362,  -0.5823, 1.5461 ]])

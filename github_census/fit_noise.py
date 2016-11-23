@@ -22,7 +22,7 @@ read_noise = 120.0
 sensor_depth = 1024.0
 min_vals = 20
 
-edge_pixels = 5
+edge_pixels = 3
 
 def fit_ge(xspan,span):
     if span[-1] < span[0]:
@@ -54,7 +54,7 @@ def fit_mtf(good_image):
     #e1 = convolve(img,np.array([[0,-1,0],[0,0,0],[0,1,0]]))
     #e2 = convolve(img,np.array([[0,0,0],[-1,0,1],[0,0,0]]))
     gs = np.sqrt(xe**2 + ye**2)
-    largest_edges = np.argsort(-gs.ravel())[:1]
+    largest_edges = np.argsort(-gs.ravel())[:edge_pixels]
     yi,xi = np.unravel_index(largest_edges,gs.shape)
     for y,x in zip(yi,xi):
         m = gs[y,x]
@@ -62,12 +62,11 @@ def fit_mtf(good_image):
         xx = xe[y,x]
         a = np.arctan2(yx,xx)
         gr = rotate(img,a*180.0/3.14159,mode='nearest')
-        yer = sobel(gr,axis=0)
         xer = sobel(gr,axis=1)
         #e1 = convolve(img,np.array([[0,-1,0],[0,0,0],[0,1,0]]))
         #e2 = convolve(img,np.array([[0,0,0],[-1,0,1],[0,0,0]]))
-        gsr = np.sqrt(xer**2 + yer**2)
-        ler = np.argsort(-gsr.ravel())[:edge_pixels]
+        gsr = np.sqrt(xer**2)
+        ler = np.argsort(-gsr.ravel())[:1]
         yir,xir = np.unravel_index(ler,gsr.shape)
         for y2,x2 in zip(yir,xir):
             cur = gr[y2,x2]
@@ -138,7 +137,7 @@ else:
     img = imgs.mean(axis=0)
     img = convolve(img/sensor_depth,np.array([[1,2,1],[2,4,2],[1,2,1]])/16.0)
     sigmas = fit_mtf(img)
-    print sigmas
+    print sigmas, sum(sigmas)/len(sigmas)
     print 'Gaussian Sigma: {0:.2f}'.format(sigmas[0])
 
     r = imgs.reshape((imgs.shape[0],-1))/sensor_depth
