@@ -96,6 +96,36 @@ def load_pfm(fname):
     shape = (height, width, 3) if color else (height, width)
     return np.flipud(np.reshape(data, shape)), scale
 
+
+def load_psm(fname):
+    color = None
+    width = None
+    height = None
+    scale = None
+    endian = None
+
+    file = open(fname,'rU')
+    header = file.readline().rstrip()
+    if header == 'PF':
+        color = True
+    elif header == 'P9':
+        color = False
+    else:
+        raise Exception('Not a PFM file.')
+
+    dim_match = re.match(r'^(\d+)\s(\d+)\s$', file.readline())
+    if dim_match:
+        width, height = map(int, dim_match.groups())
+    else:
+        raise Exception('Malformed PFM header.')
+
+    scale = float(file.readline().rstrip())
+
+    data = np.fromfile(file,np.uint16)
+    shape = (height, width, 3) if color else (height, width)
+    return np.flipud(np.reshape(data, shape)), scale
+
+
 def save_pfm(fname, image, scale=1):
     file = open(fname, 'wb')
     color = None
