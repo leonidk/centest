@@ -320,7 +320,7 @@ void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::
             auto spR = (minLIdx < maxdisp - 1) ? subpixel(rL, rC, rR) : 0;
 
             // disparity computation
-            uint16_t res = (uint16_t)std::round((std::max(0,minLIdx-DS)  + spL) * muldisp);
+            uint16_t res = (uint16_t)std::round((std::max(0.0f,minLIdx-DS+spL)) * muldisp);
             uint16_t bitMask = 0;
 
             // left-right threshold
