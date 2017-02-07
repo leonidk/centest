@@ -250,7 +250,7 @@ void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::
         //printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
         auto costX = costs.data() + y * (width*maxdisp);
 #pragma omp parallel for
-        for (int x = B_R; x < width - B_R; x++) {
+        for (int x = B_R; x < width - B_R - DS; x++) {
             auto lb = std::max(B_R, x - maxdisp);
             auto search_limit = x - lb;
             for (int d = 0; d < search_limit; d++) {
@@ -286,7 +286,7 @@ void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::
         auto prevVal = 0;
         auto costX = costs.data() + y * (width*maxdisp);
 #pragma omp parallel for
-        for (int x = B_R; x < width - B_R; x++) {
+        for (int x = B_R; x < width - B_R - DS; x++) {
             auto minRVal = std::numeric_limits<uint16_t>::max();
             auto minRIdx = 0;
             auto minLVal = std::numeric_limits<uint16_t>::max();
