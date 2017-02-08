@@ -88,12 +88,14 @@ static void censusTransform(uint16_t* in, uint32_t* out, int w, int h)
 #endif
 static float subpixel(float costLeft, float costMiddle, float costRight)
 {
-    if (costMiddle >= 0xfffe || costLeft >= 0xfffe || costRight >= 0xfffe)
-        return 0.f;
-
-    auto num = costRight - costLeft;
-    auto den = (costRight < costLeft) ? (costMiddle - costLeft) : (costMiddle - costRight);
-    return den != 0 ? 0.5f * (num / den) : 0;
+    //if (costMiddle >= 0xfffe || costLeft >= 0xfffe || costRight >= 0xfffe)
+    //    return 0.f;
+    //auto num = costRight - costLeft;
+    //auto den = (costRight < costLeft) ? (costMiddle - costLeft) : (costMiddle - costRight);
+    //return den != 0 ? 0.5f * (num / den) : 0;
+    auto num = costLeft - costRight;
+    auto den = 2*costLeft - 4*costMiddle + 2*costRight;
+    return den != 0 ? (num / den) : 0;  
 }
 
 

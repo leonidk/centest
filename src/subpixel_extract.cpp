@@ -16,6 +16,7 @@
 #include <cmath>
 #include <iostream>
 #include <numeric>
+#include <utility>
 
 #define JSON_H_IMPLEMENTATION
 #include "json.h"
@@ -33,8 +34,13 @@ static float subpixel(float costLeft, float costMiddle, float costRight)
 }
 #define DS (1)
 
-void generateDispConf(stereo::R200Match::alg_config & config, img::Img<uint16_t> & left, std::vector<uint32_t> & costs, img::Img<float> & disp, img::Img<float> & conf) 
+void generateDispConf(
+    stereo::R200Match::alg_config & config, 
+    img::Img<uint16_t> & left, std::vector<uint32_t> & costs, 
+    std::string out_name,
+    img::Img<float> gt_disp, img::Img<float> gt_mask) 
 {
+    std::ofstream outf(out_name,std::ios::binary);
     const auto B_R = config.box_radius;
     auto height = left.height;
     auto width = left.width;
@@ -43,7 +49,6 @@ void generateDispConf(stereo::R200Match::alg_config & config, img::Img<uint16_t>
     for (int y = B_R; y < height - B_R; y++) {
         auto prevVal = 0;
         auto costX = costs.data() + y * (width*maxdisp);
-#pragma omp parallel for
         for (int x = B_R; x < width - B_R; x++) {
             auto minRVal = std::numeric_limits<uint32_t>::max();
             auto minRIdx = 0;
@@ -56,16 +61,7 @@ void generateDispConf(stereo::R200Match::alg_config & config, img::Img<uint16_t>
                     minLIdx = d;
                 }
             }
-            auto xl = std::max(0, x - minLIdx);
-            auto xu = std::min(width - 1, xl + maxdisp);
-            for (int xd = xl; xd < xu; xd++) {
-                auto d = xd - x + minLIdx;
-                auto cost = costX[xd * maxdisp + d];
-                if (cost < minRVal) {
-                    minRVal = cost;
-                    minRIdx = d;
-                }
-            }
+
             // subpixel left
             auto nL = costX[x * maxdisp + std::max(minLIdx - 1, 0)];
             auto nC = costX[x * maxdisp + minLIdx];
@@ -78,75 +74,13 @@ void generateDispConf(stereo::R200Match::alg_config & config, img::Img<uint16_t>
             auto spR = (minLIdx < maxdisp - 1) ? subpixel(rL, rC, rR) : 0;
 
             // disparity computation
-            float res = std::max(0.f,minLIdx-DS  + spL);
-            uint16_t bitMask = 0;
-
-            // left-right threshold
-            bitMask |= (abs(minLIdx - minRIdx) <= config.left_right_int && abs(spR - spL) <= config.left_right_sub);
-
-            // neighbor threshold
-            auto diffL = (int)nL - (int)nC;
-            auto diffR = (int)nR - (int)nC;
-            bitMask |= (diffL >= config.neighbor || diffR >= config.neighbor) << 1;
-
-            // second peak threshold
-            auto minL2Val = std::numeric_limits<uint32_t>::max();
-            for (int d = 0; d < maxdisp; d++) {
-                auto cost = costX[x * maxdisp + d];
-                auto costNext = (d == maxdisp - 1) ? cost : costX[x * maxdisp + d+1];
-                auto costPrev = (d == 0) ? cost : costX[x * maxdisp + d - 1];
-
-                if (cost < costNext && cost < costPrev) {
-                    if (d == minLIdx)
-                        continue;
-                    if (cost < minL2Val)
-                        minL2Val = cost;
-                }
-            }
-            auto diffSP = minL2Val - minLVal;
-            bitMask |= (diffSP >= config.second_peak) << 2;
-
-            // texture difference (waste of time?)
-            auto tc = 0;
-            int centerV = left(y,x);
-            for (int i = -B_R; i <= B_R; i++) {
-                for (int j = -B_R; j <= B_R; j++) {
-                    int v = left(y + i,x + j);
-                    tc += abs(centerV - v) > config.texture_diff ? 1 : 0;
-                }
-            }
-            bitMask |= (tc >= config.texture_count) << 3;
-
-            // score limits
-            bitMask |= (minLVal >= config.score_min && minLVal <= config.score_max) << 4;
-
-
-            // median threshold
-            auto me = std::numeric_limits<uint32_t>::max();
-            auto initialized = false;
-            for (int d = 0; d < maxdisp; d++) {
-                auto cost = costX[x * maxdisp + d];
-                if (!initialized && cost != default_score) {
-                    initialized = true;
-                    me = cost;
-                }
-                if (cost > me)
-                    me += config.median_plus;
-                else if (cost < me)
-                    me -= config.median_minus;
-            }
-            bitMask |= (me - minLVal >= config.median_thresh) << 5;
-
-            //mask
-            conf(y,x) = (bitMask == 0x3F) ? 1 : 0;
-            // hole filling
-            //if (config.hole_fill) {
-            //    prevVal = res ? res : prevVal;
-            //    res = res ? res : prevVal;
-            //}
-
-            // final set
-            disp(y,x) = res;
+            float res = std::max(0,minLIdx-DS);
+            auto shift = gt_disp(y,x) - res;
+            if (gt_mask(y,x) > 0.5f && std::abs(shift) <= 0.5f) {
+                outf << nL << ' ' << nC << ' ' << nR << ' '
+                     << rL << ' ' << rC << ' ' << rR << ' '
+                     << shift << '\n';
+             }
         }
     }
 }
@@ -228,7 +162,10 @@ int main(int argc, char* argv[])
 		left_g(i) >>= bitshift;
 		right_g(i) >>= bitshift;
 	}
-	
+    auto gt_disp = img::imread<float,1>(doc["gt"].string().c_str());
+    auto gt_mask = img::imread<float,1>(doc["gt_mask"].string().c_str());
+    json::object results;
+
 	stereo::R200Match::alg_config cfg;
 
 	if (doc["config"]["algorithm"].string() == "r200") {
@@ -248,13 +185,9 @@ int main(int argc, char* argv[])
         for(int i=0; i < costs.size(); i++)
             costs[i] = costst[i];
     }
-	img::Img<float> dispf(hd.w, hd.h, 0.f);
-	img::Img<float> conff(hd.w, hd.h, 0.f);
 
-	generateDispConf(cfg,left_g,costs,dispf,conff);
-
-	img::imwrite(doc["output_disp"].string().c_str(), dispf);
-	img::imwrite(doc["output_conf"].string().c_str(), conff);
+	generateDispConf(cfg,left_g,costs,
+        doc["output_disp"].string() + ".txt",gt_disp,gt_mask);
 
     return 0;
 }
