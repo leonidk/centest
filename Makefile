@@ -9,7 +9,7 @@ LIBS = glfw3
 COMPILE_FLAGS = -std=c++14  
 #COMPILE_FLAGS = -std=c++11 -g -w  
 # Additional release-specific flags
-RCOMPILE_FLAGS = -D NDEBUG -march=native -Ofast -fopenmp 
+RCOMPILE_FLAGS = -D NDEBUG -march=native -Ofast #-fopenmp 
 # Additional debug-specific flags
 DCOMPILE_FLAGS = -D DEBUG -g -Wall -Wunused-variable
 # Add additional include paths
@@ -55,7 +55,7 @@ ALG_SRC = $(wildcard src/*Match.cpp)
 ALG_OBJ = $(patsubst src/%.cpp, obj/%.o, $(ALG_SRC))
 #src/%.o: src/%.cpp
 #	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
-all: vis_pfm rms_error librs_demo centest cost_to_conf
+all: vis_pfm rms_error librs_demo centest cost_to_conf subpixel_extract
 obj:
 	mkdir -p obj/
 obj/%.o: src/%.cpp | obj
@@ -70,6 +70,8 @@ centest: obj/Main.o obj/imio.o obj/imshow.o $(ALG_OBJ)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -o $@
 cost_to_conf: obj/cost_to_conf.o obj/imio.o obj/imshow.o $(ALG_OBJ)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -o $@
+subpixel_extract: obj/subpixel_extract.o obj/imio.o obj/imshow.o $(ALG_OBJ)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -o $@
 clean:
-	rm -f vis_pfm rms_error librs_demo centest cost_to_conf
+	rm -f vis_pfm rms_error librs_demo centest cost_to_conf subpixel_extract
 	rm -rf obj/

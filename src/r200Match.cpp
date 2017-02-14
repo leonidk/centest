@@ -87,7 +87,8 @@ template<typename TG, int CG>
 std::vector<uint16_t> domainTransform(
 	const std::vector<uint16_t>& input,
 	img::Image<TG, CG> guide,
-	const R200Match::alg_config & config
+	const R200Match::alg_config & config,
+	float ignore_val
 	) {
     auto ratio = config.dt_space / config.dt_range;
 	const int DT_B_R = config.box_radius;
@@ -158,6 +159,7 @@ std::vector<uint16_t> domainTransform(
                 for (int c = 0; c < C; c++) {
                     float p = out[idx + c];
                     float pn = out[idxp + c];
+                    pn = (pn == ignore_val) ? p : pn;
 
                     out[idx + c] = p + a*(pn - p);
                 }
@@ -171,6 +173,7 @@ std::vector<uint16_t> domainTransform(
                 for (int c = 0; c < C; c++) {
                     float p = out[idx + c];
                     float pn = out[idxn + c];
+                    pn = (pn == ignore_val) ? p : pn;
 
                     out[idx + c] = p + a*(pn - p);
                 }
@@ -196,6 +199,7 @@ std::vector<uint16_t> domainTransform(
                 for (int c = 0; c < C; c++) {
                     float p = out[idx + c];
                     float pn = out[idxp + c];
+                    pn = (pn == ignore_val) ? p : pn;
 
                     out[idx + c] = p + a*(pn - p);
                 }
@@ -209,6 +213,7 @@ std::vector<uint16_t> domainTransform(
                 for (int c = 0; c < C; c++) {
                     float p = out[idx + c];
                     float pn = out[idxn + c];
+                    pn = (pn == ignore_val) ? p : pn;
 
                     out[idx + c] = p + a*(pn - p);
                 }
@@ -242,12 +247,12 @@ void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::
 
 	// old school?
 	const auto B_R = config.box_radius;
-
+	const auto max_value = (sizeof(samples)/2) * (2*B_R+1)* (2*B_R+1);
     censusTransform(lptr, censusLeft.data(), width, height);
     censusTransform(rptr, censusRight.data(), width, height);
     img::Img<uint32_t> lc(left.width, left.height, (uint32_t*)censusLeft.data());
     img::Img<uint32_t> rc(left.width, left.height, (uint32_t*)censusRight.data());
-	std::fill(costs.begin(), costs.end(), (config.score_max + config.dt_scale - 1) / config.dt_scale);
+	std::fill(costs.begin(), costs.end(),max_value );
 
     for (int y = B_R; y < height - B_R; y++) {
         //printf("\r %.2lf %%", 100.0*static_cast<double>(y) / static_cast<double>(height));
@@ -272,7 +277,7 @@ void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::
     }
 	if (config.domain_transform) {
 		// input volume, edge image, iterations (3), X-Y Sigma, Value Sigma)
-		costs = domainTransform(costs, left, config);
+		costs = domainTransform(costs, left, config, (float)max_value);
 	}
     if(costsName.size()) {
         struct raw_header {int w,h,c,bpp;};
@@ -289,7 +294,7 @@ void R200Match::match(img::Img<uint16_t>& left, img::Img<uint16_t>& right, img::
         auto prevVal = 0;
         auto costX = costs.data() + y * (width*maxdisp);
 #pragma omp parallel for
-        for (int x = B_R; x < width - B_R - DS; x++) {
+        for (int x = B_R; x < width - B_R; x++) {
             auto minRVal = std::numeric_limits<uint16_t>::max();
             auto minRIdx = 0;
             auto minLVal = std::numeric_limits<uint16_t>::max();
