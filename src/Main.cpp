@@ -37,6 +37,8 @@ template<class F> void visit_fields(stereo::R200Match::alg_config & o, F f) {
 	f("dt_iter", o.dt_iter);
 	f("dt_space", o.dt_space);
 	f("dt_range", o.dt_range);
+    f("dt_range_disp", o.dt_range_disp);
+
 }
 template<class F> void visit_fields(stereo::sgbmMatch::alg_config & o, F f) {
 	f("dispmul", o.dispmul);

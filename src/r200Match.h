@@ -29,6 +29,7 @@ public:
 		int dt_iter = 1;
 		float dt_space = 10;
 		float dt_range = 90;
+        float dt_range_disp = 0.1;
 	};
     R200Match(int w, int h, int d, int m);
 	R200Match(int w, int h, int maxdisp, const alg_config & cfg);
