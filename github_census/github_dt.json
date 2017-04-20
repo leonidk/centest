@@ -20,14 +20,14 @@
             "domain_transform": true,
             "dt_scale": 49,
             "dt_iter": 3,
-            "dt_space": 11.25,
-            "dt_range": 58.15
+            "dt_space": 8.6,
+            "dt_range": 90.5,
+            "dt_range_disp": 0.0015
             },
     "supports_cmd": true,
     "supports_batch": false,
     "setup": [],
-    "command": "../centest",
-    "dir": ".",
+    "command": "github/centest",
     "dependent_files": [],
 
     "left_mono": "./middlebury/motorcycle/left/mono.png",
