@@ -89,6 +89,14 @@ int main(int argc, char* argv[])
     auto right_g = img::Rgb2grey(right);
     
 	int bitshift = (int)log2(doc["minint"].number<int>()+1);
+	if (bitshift == 0)
+	{
+		//endian bug
+		for (int i = 0; i < left.width*left.height; i++) {
+			left_g(i) = (left_g(i) << 8) | (left_g(i) >> 8);
+			right_g(i) = (right_g(i) << 8) | (right_g(i) >> 8);
+		}
+	}	
 
 	for (int i = 0; i < left.width*left.height; i++) {
 		left_g(i) >>= bitshift;

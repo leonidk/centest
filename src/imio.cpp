@@ -17,6 +17,7 @@ namespace img {
 		std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 		return ext;
 	}
+
 	template <typename T, int C>
 	Image<T,C> imread(const char * name) {
 		auto ext = getExtension(name);
@@ -43,8 +44,14 @@ namespace img {
 				}
 			}
 		} else {
-			returnImage.data = std::shared_ptr<T>((T*)stbi_load(name, &returnImage.width, &returnImage.height, &channels, C));
-			returnImage.ptr = returnImage.data.get();
+			if (sizeof(T) == 2) {
+				returnImage.data = std::shared_ptr<T>((T*)stbi_load_16(name, &returnImage.width, &returnImage.height, &channels, C));
+				returnImage.ptr = returnImage.data.get();
+			}
+			else {
+				returnImage.data = std::shared_ptr<T>((T*)stbi_load(name, &returnImage.width, &returnImage.height, &channels, C));
+				returnImage.ptr = returnImage.data.get();
+			}
 		}
 		return returnImage;
 	}
