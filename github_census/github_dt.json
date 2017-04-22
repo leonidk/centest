@@ -22,7 +22,7 @@
             "dt_iter": 3,
             "dt_space": 8.6,
             "dt_range": 90.5,
-            "dt_range_disp": 0.0015
+            "dt_range_disp": 0.00
             },
     "supports_cmd": true,
     "supports_batch": false,

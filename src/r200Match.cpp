@@ -118,11 +118,12 @@ std::vector<uint16_t> domainTransform(
             auto idxm = (y*ctx.width + x);
 
             float sum = 0;
+			float sum_disp = 0;
             for (int c = 0; c < CG; c++)
                 sum += std::abs(guide.ptr[idx + c] - guide.ptr[idxn + c]);
             for (int c = 0; c < C; c++)
-                sum += scale_guide2*std::abs(input[idx2 + c] - input[idxn2 + c]);
-            ctx.ptr[idxm] = 1.0f + ratio*sum;
+				sum_disp += std::abs(input[idx2 + c] - input[idxn2 + c]);
+			ctx.ptr[idxm] = 1.0f + ratio*(sum/(1.0f + scale_guide2*sum_disp));
         }
     }
 
@@ -137,11 +138,13 @@ std::vector<uint16_t> domainTransform(
             auto idxm = (y*ctx.width + x);
 
             float sum = 0;
+			float sum_disp = 0;
+
             for (int c = 0; c < CG; c++)
                 sum += std::abs(guide.ptr[idx + c] - guide.ptr[idxn + c]);
             for (int c = 0; c < C; c++)
-                sum += scale_guide2*std::abs(input[idx2 + c] - input[idxn2 + c]);
-            cty.ptr[idxm] = 1.0f + ratio*sum;
+				sum_disp += std::abs(input[idx2 + c] - input[idxn2 + c]);
+            cty.ptr[idxm] = 1.0f + ratio*(sum / (1.0f + scale_guide2*sum_disp));
         }
     }
 
