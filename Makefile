@@ -1,10 +1,21 @@
 #all: centest librs_demo vis_pfm rsm_error
 
+uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
+machine := $(shell sh -c "$(CC) -dumpmachine || echo unknown")
+
+
+ifeq ($(uname_S),Darwin)
+CXXFLAGS += -I/usr/local/include
+GLFW3_FLAGS := -lglfw -framework OpenGL
+else
+GLFW3_FLAGS := `pkg-config --cflags --libs glfw3 gl`
+endif
+
 CXX ?= g++
 # Extension of source files used in the project
 SRC_EXT = cpp
 # Path to the source directory, relative to the makefile
-LIBS = glfw3 
+LIBS =  
 # General compiler flags
 COMPILE_FLAGS = -std=c++14  
 #COMPILE_FLAGS = -std=c++11 -g -w  
@@ -15,7 +26,7 @@ DCOMPILE_FLAGS = -D DEBUG -g -Wall -Wunused-variable
 # Add additional include paths
 INCLUDES = -I src/
 # General linker settings
-LINK_FLAGS = 
+LINK_FLAGS = $(GLFW3_FLAGS) 
 # Additional release-specific linker settings
 RLINK_FLAGS = 
 # Additional debug-specific linker settings
@@ -65,13 +76,13 @@ rms_error: obj/rms_error.o obj/imio.o
 vis_pfm: obj/vis_pfm.o obj/imio.o
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -o $@
 librs_demo: obj/rs_demo.o obj/imio.o obj/imshow.o $(ALG_OBJ)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -lrealsense -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude $(GLFW3_FLAGS) -lrealsense -o $@
 centest: obj/Main.o obj/imio.o obj/imshow.o $(ALG_OBJ)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude $(GLFW3_FLAGS) -o $@
 cost_to_conf: obj/cost_to_conf.o obj/imio.o obj/imshow.o $(ALG_OBJ)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude $(GLFW3_FLAGS) -o $@
 subpixel_extract: obj/subpixel_extract.o obj/imio.o obj/imshow.o $(ALG_OBJ)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude -lGL -lglfw -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Iinclude $(GLFW3_FLAGS) -o $@
 clean:
 	rm -f vis_pfm rms_error librs_demo centest cost_to_conf subpixel_extract
 	rm -rf obj/
